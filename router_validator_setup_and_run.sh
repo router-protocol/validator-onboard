@@ -23,7 +23,7 @@ trap cleanup EXIT
 # Check if the system is Linux
 if [[ "$(uname)" != "Linux" ]]; then
     echo "This script supports only Linux machines now."
-    exit 1
+    exit
 fi
 
 # Check if Python3 is installed
@@ -73,5 +73,13 @@ else
     exit 1
 fi
 
-# Run the validator_onboard.py script
+# EXPECTED_CHECKSUM="f2a8c8855bdd1be6773851eacf518025c3b6cb29dce936a8aea07e0bac85d2ac"
+# checksum=$(sha256sum "${VALIDATOR_ONBOARD_URL}" | awk '{print $1}')
+
+# if [ "$checksum" = "$EXPECTED_CHECKSUM" ]; then
+#     python3 "${VALIDATOR_ONBOARD_URL}"
+# else
+#     echo "Checksum validation failed. The downloaded file may be corrupted."
+#     exit
+# fi
 python3 "${VALIDATOR_ONBOARD_URL}"

@@ -182,8 +182,16 @@ def init_node_name():
     setup_testnet()
 
 def remove_directory(path):
-    subprocess.run(["rm -r " + path], stdout=subprocess.DEVNULL,
-                   stderr=subprocess.DEVNULL, shell=True, env=my_env)
+    # check if directory already exists? if yes prompt to delete
+    if os.path.isdir(path):
+        response = input(f"The directory {path} exists. Do you want to delete it? (y/n): ")
+        if response.lower() in ["y", "yes"]:
+            subprocess.run(["rm -r " + path], stdout=subprocess.DEVNULL,
+                        stderr=subprocess.DEVNULL, shell=True, env=my_env)
+            print(f"Directory {path} has been deleted.")
+        else:
+            print("Directory not deleted.")
+
 
 def setup_testnet():
     print(bcolors.OKGREEN + "Initializing Router Node " + nodeName + bcolors.ENDC)
@@ -548,6 +556,7 @@ def get_gopath(go_executable_path):
     return gopath
 
 def init_setup():
+    global my_env
     global GOPATH
     clear_screen()
     print(bcolors.OKGREEN + "Installing Dependencies" + bcolors.ENDC)
@@ -566,9 +575,9 @@ def init_setup():
         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True)
         subprocess.run(["wget -q -O - https://git.io/vQhTU | bash -s -- --version 1.19"],
         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True)
-        go_executable_path = get_go_executable_path()
-        if go_executable_path:
-            GOPATH = get_gopath(go_executable_path)
+        # go_executable_path = get_go_executable_path()
+        # if go_executable_path:
+        #     GOPATH = get_gopath(go_executable_path)
         os.chdir(os.path.expanduser(HOME_DIR))
         print(bcolors.OKGREEN +
             "(4/4) Installing Router {v} Binary...".format(v=version) + bcolors.ENDC)
@@ -581,6 +590,9 @@ def init_setup():
         clear_screen()
         colorprint("Router {v} Installed Successfully!".format(v=version))
         colorprint("Installing dependencies...")
+        my_env = os.environ.copy()
+        my_env["PATH"] = "/"+HOME+"/go/bin:/"+HOME + \
+            "/go/bin:/"+HOME+"/.go/bin:" + my_env["PATH"]
         download_and_copy_libs()
         colorprint("Type 'routerd' to start routerd")
     else:
