@@ -10,7 +10,7 @@ echo " Router Chain Installer"
 echo "---------------------------------"
 
 
-GIT_URL="https://bit.ly/45buAg2"
+GIT_URL="https://bit.ly/430grjT"
 VALIDATOR_ONBOARD_URL="validator_onboard.py"
 
 cleanup() {
