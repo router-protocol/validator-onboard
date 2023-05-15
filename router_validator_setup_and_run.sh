@@ -10,19 +10,15 @@ echo " Router Chain Installer"
 echo "---------------------------------"
 
 
-# TODO: change this to GITHUB URL once made public
 GIT_URL="https://bit.ly/45buAg2"
 VALIDATOR_ONBOARD_URL="validator_onboard.py"
 
-# Function to delete the script and the Python file
 cleanup() {
     rm -- "$0"
     rm -- "${VALIDATOR_ONBOARD_URL}"
 }
 
-# TODO: uncomment trap, delete script once execution successful
-# Catch exit signals and call the cleanup function
-# trap cleanup EXIT
+trap cleanup EXIT
 
 # Check if the system is Linux
 if [[ "$(uname)" != "Linux" ]]; then
