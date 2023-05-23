@@ -26,6 +26,8 @@ MAX_CPU_PERCENT=80.0
 
 declare -a SUCCESS_MSGS=()
 declare -a ERROR_MSGS=()
+declare -a ERROR_ENUMS=()
+declare -a SUCCESS_ENUMS=()
 
 # Check if --output json is passed as an argument
 output_json=false
@@ -43,6 +45,37 @@ echo() {
     fi
 }
 
+error_index=0
+add_error_msg() {
+    ERROR_MSGS[error_index]="$1"
+    ERROR_ENUMS[error_index]="$2"
+    error_index=$((error_index + 1))
+}
+
+success_index=0
+add_success_msg() {
+    SUCCESS_MSGS[success_index]="$1"
+    SUCCESS_ENUMS[success_index]="$2"
+    success_index=$((success_index + 1))
+}
+
+function check_usage() {
+    local usage=$1
+    local max_limit=$2
+    local enum_key=$3
+    local usage_type=$4
+
+    if (($(echo "$usage > $max_limit" | bc -l))); then
+        msg="${usage_type} usage is greater than ${max_limit}%"
+        echo "${msg}"
+        add_error_msg "$msg" "$enum_key"
+    else
+        msg="${usage_type} usage is at ${usage}%; remains under ${max_limit}% threshold"
+        echo "${msg}"
+        add_success_msg "$msg" "$enum_key"
+    fi
+}
+
 echo "==============================="
 echo "  Router Chain Health Check"
 echo "==============================="
@@ -56,30 +89,33 @@ fi
 
 echo -e "\nChecking if the ${ROUTERD_SERVICE_NAME} service is active"
 echo "---------------------------------"
+ENUM_KEY="COSMOVISOR_SERVICE"
 if ! systemctl is-active --quiet "${ROUTERD_SERVICE_NAME}"; then
     msg="The ${ROUTERD_SERVICE_NAME} (routerd) is NOT active"
     echo "${msg}"
-    ERROR_MSGS+=("$msg")
+    add_error_msg "$msg" "$ENUM_KEY"
 else
     msg="The ${ROUTERD_SERVICE_NAME} (routerd) is active"
     echo "${msg}"
-    SUCCESS_MSGS+=("$msg")
+    add_success_msg "$msg" "$ENUM_KEY"
 fi
 
+ENUM_KEY="TMRPC_LOCAL"
 echo -e "\nChecking if localhost tmRPC is accessible"
 is_service_running=false
 # check if able to access http://localhost:26657/status
 if ! curl -s ${TM_RPC_ENDPOINT}/status >/dev/null; then
     msg="Unable to access ${TM_RPC_ENDPOINT}/status"
     echo "${msg}"
-    ERROR_MSGS+=("$msg")
+    add_error_msg "$msg" "$ENUM_KEY"
 else
     is_service_running=true
     msg="Able to access ${TM_RPC_ENDPOINT}/status"
     echo "${msg}"
-    SUCCESS_MSGS+=("$msg")
+    add_success_msg "$msg" "$ENUM_KEY"
 fi
 
+ENUM_KEY="BLOCK_HEIGHT_UPDATE"
 echo -e "\nChecking if the blocks are increasing (after waiting for 10 seconds)"
 echo "---------------------------------"
 
@@ -93,50 +129,54 @@ if [[ "${is_service_running}" == true ]]; then
     if [[ "${CURRENT_BLOCK}" == "${CURRENT_BLOCK_AFTER_WAIT}" ]]; then
         msg="Blocks are NOT increasing after waiting for 10 seconds. ${ROUTERD_SERVICE_NAME} is NOT syncing"
         echo "${msg}"
-        ERROR_MSGS+=("$msg")
+        add_error_msg "$msg" "$ENUM_KEY"
     else
         msg="Blocks are increasing. ${ROUTERD_SERVICE_NAME} is syncing"
         echo "${msg}"
-        SUCCESS_MSGS+=("$msg")
+        add_success_msg "$msg" "$ENUM_KEY"
     fi
 
+    ENUM_KEY="BLOCK_HEIGHT_SYNC"
     LATEST_BLOCK=$(curl -s ${PUBLIC_TM_RPC_ENDPOINT} | jq -r '.result.sync_info.latest_block_height')
 
     if ((CURRENT_BLOCK < LATEST_BLOCK - 10 || CURRENT_BLOCK > LATEST_BLOCK + 10)); then
         msg="routerd service is NOT in sync with the public RPC"
         echo "${msg}"
-        ERROR_MSGS+=("$msg")
+        add_error_msg "$msg" "$ENUM_KEY"
     else
         msg="routerd service is in sync with the public RPC"
         echo "${msg}"
-        SUCCESS_MSGS+=("$msg")
+        add_success_msg "$msg" "$ENUM_KEY"
     fi
 
+    ENUM_KEY="ORCHESTRATOR_SERVICE"
     echo -e "\nChecking if the ${ORCHESTRATOR_SERVICE_NAME} is syncing"
     echo "---------------------------------"
     if ! systemctl is-active --quiet "${ORCHESTRATOR_SERVICE_NAME}"; then
         msg="${ORCHESTRATOR_SERVICE_NAME} is NOT active"
         echo "${msg}"
-        ERROR_MSGS+=("$msg")
+        add_error_msg "$msg" "$ENUM_KEY"
     else
         msg="${ORCHESTRATOR_SERVICE_NAME} is active"
         echo "${msg}"
-        SUCCESS_MSGS+=("$msg")
+        add_success_msg "$msg" "$ENUM_KEY"
     fi
 
+    ENUM_KEY="ORCHESTRATOR_HEALTH"
     echo -e "\nChecking orchestrator health"
     echo "---------------------------------"
     if ! curl -s ${ORCHESTRATOR_ENDPOINT}/health >/dev/null; then
         msg="Orchestrator process is NOT healthy"
         echo "${msg}"
-        ERROR_MSGS+=("$msg")
+        add_error_msg "$msg" "$ENUM_KEY"
     else
         msg="Orchestrator process is healthy"
         echo "${msg}"
-        SUCCESS_MSGS+=("$msg")
+        add_success_msg "$msg" "$ENUM_KEY"
     fi
 fi
 
+ENUM_KEY="BOND_STATUS"
 echo -e "\nChecking if the validator is bonded"
 echo "---------------------------------"
 if [[ -n "${VALIDATOR_ADDRESS}" ]]; then
@@ -146,14 +186,15 @@ if [[ -n "${VALIDATOR_ADDRESS}" ]]; then
     if [[ "${VALIDATOR_BOND_STATUS}" == "BOND_STATUS_UNBONDED" ]]; then
         msg="The validator is NOT bonded"
         echo "${msg}"
-        ERROR_MSGS+=("$msg")
+        add_error_msg "$msg" "$ENUM_KEY"
     else
         msg="Validator status ${VALIDATOR_BOND_STATUS}. The validator is bonded"
         echo "${msg}"
-        SUCCESS_MSGS+=("$msg")
+        add_success_msg "$msg" "$ENUM_KEY"
     fi
 fi
 
+ENUM_KEY="JAIL_STATUS"
 echo -e "\nChecking if the validator is jailed"
 echo "---------------------------------"
 if [[ -n "${VALIDATOR_ADDRESS}" ]]; then
@@ -163,11 +204,11 @@ if [[ -n "${VALIDATOR_ADDRESS}" ]]; then
     if [[ "${VALIDATOR_JAILED_STATUS}" == "true" ]]; then
         msg="The validator is jailed"
         echo "${msg}"
-        ERROR_MSGS+=("$msg")
+        add_error_msg "$msg" "$ENUM_KEY"
     else
         msg="The validator is not jailed"
         echo "${msg}"
-        SUCCESS_MSGS+=("$msg")
+        add_success_msg "$msg" "$ENUM_KEY"
     fi
 fi
 
@@ -187,46 +228,20 @@ fi
 
 if dpkg -s sysstat &>/dev/null; then
     echo -e "\nSystem CPU, Memory, Disk usage"
+
     cpu_usage=$(mpstat | awk '$12 ~ /[0-9.]+/ { print 100 - $12 }')
+    mem_usage=$(free -m | awk 'NR==2{printf "%.2f", $3*100/$2 }')
+    disk_usage=$(df -h | awk '$NF=="/"{printf "%s", $5}' | tr -d %)
 
     echo "---------------------------------"
     echo "CPU usage: ${cpu_usage}%"
-    echo "Memory usage: $(free -m | awk 'NR==2{printf "%.2f%%\t\t", $3*100/$2 }')"
-    echo "Disk usage: $(df -h | awk '$NF=="/"{printf "%s\t\t", $5}')"
+    echo "Memory usage: ${mem_usage}%"
+    echo "Disk usage: ${disk_usage}%"
 
     echo "Validating system health.."
-    if (($(echo "$cpu_usage > $MAX_CPU_PERCENT" | bc -l))); then
-        msg="CPU usage is greater than ${MAX_CPU_PERCENT}%"
-        echo "${msg}"
-        ERROR_MSGS+=("$msg")
-    else
-        msg="CPU usage at ${cpu_usage}%; remains under ${MAX_CPU_PERCENT}% threshold"
-        echo "${msg}"
-        SUCCESS_MSGS+=("$msg")
-    fi
-
-    # check if memory usage is greater than 80%
-    mem_usage=$(free -m | awk 'NR==2{printf "%.2f", $3*100/$2 }')
-    if (($(echo "$mem_usage > 80" | bc -l))); then
-        msg="Memory usage is greater than 80%"
-        echo "${msg}"
-        ERROR_MSGS+=("$msg")
-    else
-        msg="Memory usage is below 80%"
-        echo "${msg}"
-        SUCCESS_MSGS+=("$msg")
-    fi
-
-    # check if disk usage is greater than 80%
-    if (($(df -h | awk '$NF=="/"{printf "%s\t\t", $5}' | tr -d %) > 80)); then
-        msg="Disk usage is greater than 80%"
-        echo "${msg}"
-        ERROR_MSGS+=("$msg")
-    else
-        msg="Disk usage is below 80%"
-        echo "${msg}"
-        SUCCESS_MSGS+=("$msg")
-    fi
+    check_usage "$cpu_usage" $MAX_CPU_PERCENT "CPU_USAGE" "CPU"
+    check_usage "$mem_usage" 80 "MEMORY_USAGE" "Memory"
+    check_usage "$disk_usage" 80 "DISK_USAGE" "Disk"
 fi
 
 #######################################
@@ -258,19 +273,21 @@ if [[ "${output_json}" != true ]]; then
     echo -e "Error: ${total_errors}"
 fi
 
-# use this function if jq is not installed
-json_array() {
-    local array=("$@")
-    local json_array="["
-    local len=${#array[@]}
-    for ((i = 0; i < $len; i++)); do
-        json_array+="\"${array[$i]}\""
-        if ((i < len - 1)); then
-            json_array+=","
+function generate_json() {
+    local enums=("${!1}")
+    local msgs=("${!2}")
+    local status=$3
+    local json='['
+
+    for ((i = 0; i < ${#enums[@]}; i++)); do
+        if [ $i -ne 0 ]; then
+            json+=", "
         fi
+        json+=$(printf '{"type": "%s", "status": "%s", "msg": "%s"}' "${enums[$i]}" "$status" "${msgs[$i]}")
     done
-    json_array+="]"
-    echo "$json_array"
+
+    json+=']'
+    echo "$json"
 }
 
 # Check if --output json is passed as an argument
@@ -278,16 +295,12 @@ if [[ "${output_json}" == true ]]; then
     timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
     output_json=false
 
-    # check if jq is installed
-    if ! dpkg -s jq &>/dev/null; then
+    SUCCESS_MSGS_JSON=$(generate_json SUCCESS_ENUMS[@] SUCCESS_MSGS[@] "HEALTHY")
+    ERROR_MSGS_JSON=$(generate_json ERROR_ENUMS[@] ERROR_MSGS[@] "UNHEALTHY")
 
-        ERROR_MSGS_JSON=$(json_array "${ERROR_MSGS[@]}")
-        SUCCESS_MSGS_JSON=$(json_array "${SUCCESS_MSGS[@]}")
+    if ! dpkg -s jq &>/dev/null; then
         echo -e "{\"total_checks\": ${total_checks},\"success\": ${total_success},\"error\": ${total_errors},\"timestamp\": \"${timestamp}\",\"success_msgs\": ${SUCCESS_MSGS_JSON},\"error_msgs\": ${ERROR_MSGS_JSON}}"
         exit 1
     fi
-
-    ERROR_MSGS_JSON=$(printf '%s\n' "${ERROR_MSGS[@]}" | jq -R . | jq -s .)
-    SUCCESS_MSGS_JSON=$(printf '%s\n' "${SUCCESS_MSGS[@]}" | jq -R . | jq -s .)
     echo -e "{\"total_checks\": ${total_checks},\"success\": ${total_success},\"error\": ${total_errors},\"timestamp\": \"${timestamp}\",\"success_msgs\": ${SUCCESS_MSGS_JSON},\"error_msgs\": ${ERROR_MSGS_JSON}}" | jq
 fi
