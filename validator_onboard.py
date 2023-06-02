@@ -8,6 +8,7 @@ import argparse
 import sys
 import shutil
 import random
+import traceback
 from subprocess import check_call
 
 # self-destruct file after first call
@@ -17,6 +18,7 @@ from subprocess import check_call
 class NetworkVersion(str, Enum):
     TESTNET = "v1.0.0-rc1"
 version = NetworkVersion.TESTNET
+script_version = "v1.0.1"
 snapshot_url="https://snapshots.routerprotocol.com/router-testnet-snapshot-2021-09-30-00-00-00.tar.gz"
 class NetworkType(str, Enum):
     MAINNET = "1"
@@ -88,20 +90,6 @@ def fmt(prog): return CustomHelpFormatter(prog, max_help_position=30)
 
 parser = argparse.ArgumentParser(
     description="Router Installer", formatter_class=fmt)
-
-
-routerd_service_file_content = f'''[Unit]
-Description=routerd
-After=network.target
-
-[Service]
-User={USER}
-Type=simple
-ExecStart=/usr/bin/routerd start --json-rpc.api eth,txpool,personal,net,debug,web3,miner --api.enable start --trace "true"
-
-[Install]
-WantedBy=multi-user.target
-'''
 
 parser._optionals.title = 'Optional Arguments'
 if not len(sys.argv) > 1:
@@ -231,6 +219,18 @@ def start_routerd_service():
 
 def setup_service():
     # stop if already running
+    routerd_service_file_content = f'''[Unit]
+Description=routerd
+After=network.target
+
+[Service]
+User={USER}
+Type=simple
+ExecStart=/usr/bin/routerd start --json-rpc.api eth,txpool,personal,net,debug,web3,miner --api.enable start --trace "true"
+
+[Install]
+WantedBy=multi-user.target
+'''
     subprocess.run(["sudo systemctl stop routerd.service"], stdout=subprocess.DEVNULL,
                    stderr=subprocess.DEVNULL, shell=True, env=my_env)
     with open("routerd.service", "w") as service_file:
@@ -560,7 +560,6 @@ def init_setup():
         my_env["PATH"] = "/"+HOME+"/go/bin:/"+HOME + \
             "/go/bin:/"+HOME+"/.go/bin:" + my_env["PATH"]
         download_and_copy_libs()
-        colorprint("Type 'routerd' to start routerd")
     else:
         print("Unknown OS")
 
@@ -664,6 +663,27 @@ WantedBy=multi-user.target
         ["sudo mv orchestrator.service /lib/systemd/system/orchestrator.service"], shell=True, env=my_env)
     subprocess.run(["sudo systemctl daemon-reload"], shell=True, env=my_env)
 
+'''
+Prints system information required for logging
+'''
+def print_system_info():
+    # prints all system information
+    print(bcolors.OKGREEN + "\nSystem Information" + bcolors.ENDC)
+    print("=========================================")
+    arch = subprocess.run(['uname', '-m'], stdout=subprocess.PIPE)
+    arch = arch.stdout.decode('utf-8').strip()
+    mem_bytes = os.sysconf('SC_PAGE_SIZE') * os.sysconf('SC_PHYS_PAGES')
+    mem_gib = mem_bytes/(1024.**3)
+    space_available = shutil.disk_usage("/").free / (1024.**3)
+    cores = subprocess.run(['lscpu | grep "CPU(s):" | head -1 | cut -d":" -f2'], stdout=subprocess.PIPE, shell=True)
+    print("OS: " + os_name)
+    print("Architecture: " + arch)
+    print("RAM: " + str(round(mem_gib))+"GB")
+    print("Cores: " + cores.stdout.decode('utf-8').strip())
+    print("Memory: " + str(round(space_available))+"GB")
+    print("=========================================")
+
+
 def configure_orchestrator():
     print(bcolors.OKGREEN + "Configuring Orchestrators..." + bcolors.ENDC)
     print(f"Current directory: {os.getcwd()}")
@@ -715,29 +735,39 @@ def start():
     print("3. Install Orchestrator")
     print("4. Upgrade Orchestrator")
     option = input("Enter option: ")
-    
-    if option == "1":
-        install_option=1
-        print(bcolors.OKBLUE + "Installing Router and Orchestrator" + bcolors.ENDC)
-        setup()
-        setup_orchestrator()
-        configure_orchestrator()
-        print(bcolors.OKGREEN + "Run validator (routerd) using" + bcolors.ENDC)
-        install_option=2
-        completeCosmovisor()
-    elif option == "2":
-        install_option=2
-        print("Installing Router...")
-        setup()
-    elif option == "3":
-        install_option=3
-        setup_orchestrator()
-    elif option == "4":
-        install_option=4
-        upgrade_orchestrator=True
-        setup_orchestrator()
-    else:
-        print("Invalid option")
+    try:
+        if option == "1":
+            install_option=1
+            print(bcolors.OKBLUE + "Installing Router and Orchestrator" + bcolors.ENDC)
+            setup()
+            setup_orchestrator()
+            configure_orchestrator()
+            print(bcolors.OKGREEN + "Run validator (routerd) using" + bcolors.ENDC)
+            install_option=2
+            completeCosmovisor()
+        elif option == "2":
+            install_option=2
+            print("Installing Router...")
+            setup()
+        elif option == "3":
+            install_option=3
+            setup_orchestrator()
+        elif option == "4":
+            install_option=4
+            upgrade_orchestrator=True
+            setup_orchestrator()
+        else:
+            print("Invalid option")
+            exit(1)
+
+    except Exception as e:
+        print_system_info()
+        print(f"\nError (Script version: {script_version})")
+        print("=========================================")
+        print("msg: ", e)
+        print("traceback: ", traceback.format_exc())
+        print("=========================================\n")
+        print("Error while installing. Please connect with us on Discord for support with a screenshot of the error.\n")
         exit(1)
 
 if __name__ == '__main__':
