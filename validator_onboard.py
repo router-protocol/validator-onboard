@@ -191,12 +191,16 @@ def remove_file(file_path):
     subprocess.run(["rm " + file_path], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True, env=my_env)
 
 def download_replace_genesis():
-    colorprint("Downloading and Replacing Genesis...")
-    download_genesis()
-    replace_genesis()
-    unsafe_reset()
-    find_replace_seeds()
-    pruning_settings()
+    try:
+        colorprint("Downloading and Replacing Genesis...")
+        download_genesis()
+        replace_genesis()
+        unsafe_reset()
+        find_replace_seeds()
+        pruning_settings()
+    except Exception as e:
+        print("error in download_replace_genesis: ", e)
+        raise e
 
 def start_routerd_service():
     # ask user confirmation to add service file and start
@@ -264,7 +268,12 @@ def download_genesis():
 
 def replace_genesis():
     print("replacing genesis...")
-    with open(os.path.join(routerd_home, "config/genesis.json"), "r") as json_file:
+    genesis_filepath=os.path.join(routerd_home, "config/genesis.json")
+    if not os.path.isfile(genesis_filepath):
+        print(bcolors.FAIL + "Genesis file not found. Please try again." + bcolors.ENDC)
+        exit(1)
+
+    with open(genesis_filepath, "r") as json_file:
         data = json.load(json_file)
 
     result_genesis = data.get("result", {}).get("genesis")
