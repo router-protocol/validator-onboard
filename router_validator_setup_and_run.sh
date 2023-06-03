@@ -26,6 +26,13 @@ if [[ "$(uname)" != "Linux" ]]; then
     exit
 fi
 
+# Check if wget is installed
+if ! command -v wget &> /dev/null
+then
+    echo "wget could not be found"
+    exit 1
+fi
+
 # Check if Python3 is installed
 if ! command -v python3 &> /dev/null; then
     echo "Python3 is not installed. Do you want to install it? (yes/no)"
@@ -61,6 +68,18 @@ if ! python3 -c "import requests" &> /dev/null; then
     else
         echo "The requests library is required to run this script. Exiting."
         exit 1
+    fi
+fi
+
+# check if python3 traceback library is installed
+if ! python3 -c "import traceback" &> /dev/null; then
+    echo "The traceback library is not installed. This is required to trace if any errors occur during the script execution."
+    echo "Do you want to install it? (yes/no)"
+    read answer
+    if [[ "${answer,,}" == "yes" ]]; then
+        pip3 install --user traceback
+    else
+        echo "Traceback not installed. Continuing without it."
     fi
 fi
 
