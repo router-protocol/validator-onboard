@@ -170,6 +170,7 @@ def remove_directory(path):
             print(f"Directory {path} has been deleted.")
         else:
             print("Directory not deleted.")
+            exit(1)
 
 
 def setup_testnet():
@@ -197,6 +198,7 @@ def download_replace_genesis():
         replace_genesis()
         unsafe_reset()
         find_replace_seeds()
+        update_config_settings()
         pruning_settings()
     except Exception as e:
         print("error in download_replace_genesis: ", e)
@@ -290,6 +292,10 @@ def replace_seeds(peers):
     subprocess.run(["sed -i -E 's/seeds = \"\"/seeds = \"" + peers + "\"/g' " + config_toml], shell=True)
     clear_screen()
 
+def update_config_settings():
+    config_toml = os.path.join(routerd_home, "config/config.toml")
+    subprocess.run(["sed -i \'s/timeout_commit = \".*\"/timeout_commit = \"1s\"/g\' "+ config_toml], shell=True)
+    clear_screen()
 
 def pruning_settings():
 
