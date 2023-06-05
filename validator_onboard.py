@@ -25,7 +25,7 @@ class NetworkType(str, Enum):
     TESTNET = "2"
 
 
-SEED_PEERS="06952dd421e75835e8871de3f60507812156ea03@13.127.165.58:26656"
+SEED_PEERS="16bc9a252c2cb82c6aefdc82826f7d7021114f0a@13.127.165.58:26656"
 GENESIS_JSON="https://tm.rpc.testnet.routerchain.dev/genesis"
 ROUTERD_FILE = "routerd.tar"
 ORCHESTRATORD_FILE = "router-orchestrator"
