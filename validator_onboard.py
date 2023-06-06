@@ -341,7 +341,6 @@ def dataSyncSelectionTest():
     print(f"{bcolors.OKGREEN}Please choose from the following options:")
     for i, option in enumerate(snapshot_options, start=1):
         print(f"{i}) {option['name']}: ({option['description']})")
-        print(f"{bcolors.ENDC}")
     dataTypeAns = input(bcolors.OKGREEN + 'Enter Choice: ' + bcolors.ENDC)
     # 1 - Download snapshot
     # 2 - Sync from genesis
@@ -351,7 +350,10 @@ def dataSyncSelectionTest():
         download_and_extract_snapshot()
     elif dataTypeAns == "2":
         clear_screen()
-        cosmovisor_init()
+        if ENABLE_GENESIS_SYNC == False:
+            print(bcolors.OKGREEN + "Sync from Genesis is disabled. Please select Snapshot" + bcolors.ENDC)
+            dataSyncSelectionTest()
+            # cosmovisor_init()
     elif dataTypeAns == "3":
         clear_screen()
         partComplete()
@@ -380,11 +382,7 @@ def download_and_extract_snapshot():
     os.chdir(os.path.expanduser(routerd_home))
     subprocess.run(["wget -O - "+snapshot_url +
                    " | lz4 -d | tar -xvf -"], shell=True, env=my_env)
-    clear_screen()
-    if os_name == "Linux":
-        cosmovisor_init()
-    else:
-        complete()
+    cosmovisor_init()
 
 def complete():
     print(bcolors.OKGREEN +
@@ -440,9 +438,6 @@ def download_and_copy_libs():
                 " /lib64"], shell=True, env=my_env)
 
 def cosmovisor_init():
-    if ENABLE_GENESIS_SYNC == False:
-        print(bcolors.OKGREEN + "Sync from Genesis is disabled. Please select Snapshot" + bcolors.ENDC)
-        dataSyncSelectionTest()
     print(bcolors.OKGREEN + "Initializing cosmovisor..." + bcolors.ENDC)
     clear_screen()
     os.chdir(os.path.expanduser(HOME))
