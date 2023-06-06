@@ -19,7 +19,7 @@ class NetworkVersion(str, Enum):
     TESTNET = "v1.0.0-rc1"
 version = NetworkVersion.TESTNET
 script_version = "v1.0.1"
-snapshot_url="https://snapshots.routerprotocol.com/router-testnet-snapshot-2021-09-30-00-00-00.tar.gz"
+snapshot_url="https://routerchain-testnet-snapshot.s3.ap-south-1.amazonaws.com/backup-file.tar.lz4"
 class NetworkType(str, Enum):
     MAINNET = "1"
     TESTNET = "2"
@@ -54,7 +54,8 @@ ORCHESTRATOR_TEMPLATE="""
     }
 }"""
 
-ENABLE_SNAPSHOT = False
+ENABLE_SNAPSHOT = True
+ENABLE_GENESIS_SYNC = False
 HOME_DIR = os.path.expanduser("~")
 
 SYSTEM_RAM_REQUIRED = 16
@@ -181,7 +182,7 @@ def setup_testnet():
 
 def setup_router_node():
     clear_config_files()
-    subprocess.run(["routerd init " + nodeName + " --chain-id=router_9000-1 -o --home " + routerd_home],
+    subprocess.run(["routerd init " + nodeName + " --chain-id=router_9601-1 -o --home " + routerd_home],
                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True, env=my_env)
 
 def clear_config_files():
@@ -439,6 +440,9 @@ def download_and_copy_libs():
                 " /lib64"], shell=True, env=my_env)
 
 def cosmovisor_init():
+    if ENABLE_GENESIS_SYNC == False:
+        print(bcolors.OKGREEN + "Sync from Genesis is disabled. Please select Snapshot" + bcolors.ENDC)
+        dataSyncSelectionTest()
     print(bcolors.OKGREEN + "Initializing cosmovisor..." + bcolors.ENDC)
     clear_screen()
     os.chdir(os.path.expanduser(HOME))
