@@ -663,9 +663,13 @@ After=network.target
 [Service]
 User={USER}
 Type=simple
-
 WorkingDirectory={ORCHESTRATOR_PATH}
 ExecStart=/usr/bin/router-orchestrator start --reset --config {ORCHESTRATOR_PATH}/config.json
+Restart=on-failure
+RestartSec=10s
+StartLimitInterval=90s
+StartLimitBurst=3
+StartLimitAction=none
 
 [Install]
 WantedBy=multi-user.target
