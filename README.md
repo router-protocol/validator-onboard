@@ -1,6 +1,6 @@
 # router-chain-validator-onboard
 
-Setup validator:
+## Setup validator
 
 1. Use this shell command to start validator onboard process. Following command will setup node by installing all required dependencies, create systemd service and start node.
 
@@ -8,9 +8,9 @@ Setup validator:
 curl -L https://bit.ly/3IdpohH > r.sh && bash r.sh
 ```
 
-1. Follow this documentation to stake and configure orchestrator: <https://docs.routerprotocol.com/validators/running-a-validator/on-testnet/run-a-node>
+2. Follow this documentation to stake and configure orchestrator: <https://docs.routerprotocol.com/validators/running-a-validator/on-testnet/run-a-node>
 
-Validator health check:
+## Validator health check
 
 1. Use this shell command to check validator health. Following command will check node status, orchestrator status and validator status.
 
