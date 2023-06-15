@@ -25,3 +25,7 @@ routerd keys show <validator_key> -a --keyring-backend file --bech=val
 ```
 
 there is a optional `--output json` flag to get output in json format
+
+```shell
+curl -L https://bit.ly/440dal3  > vh.sh && bash vh.sh <validator operator address> --output json
+```
