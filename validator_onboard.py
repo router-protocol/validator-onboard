@@ -494,7 +494,7 @@ Environment=\"DAEMON_ALLOW_DOWNLOAD_BINARIES=false\"
 Environment=\"DAEMON_LOG_BUFFER_SIZE=512\"
 Environment=\"UNSAFE_SKIP_BACKUP=true\"
 User =""" + USER+"""
-ExecStart="""+HOME+"""/go/bin/cosmovisor start --json-rpc.api eth,txpool,personal,net,debug,web3,miner --api.enable start --trace "true" --home """+routerd_home+"""
+ExecStart="""+HOME+"""/go/bin/cosmovisor start --log_level "error" --json-rpc.api eth,txpool,personal,net,debug,web3,miner --api.enable start --home """+routerd_home+"""
 Restart=always
 RestartSec=3
 LimitNOFILE=infinity
