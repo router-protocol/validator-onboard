@@ -19,13 +19,13 @@ class NetworkVersion(str, Enum):
     TESTNET = "v1.0.0-rc1"
 version = NetworkVersion.TESTNET
 script_version = "v1.0.1"
-snapshot_url="https://routerchain-testnet-snapshot.s3.ap-south-1.amazonaws.com/jun14/backup-file.tar.lz4"
+snapshot_url="https://routerchain-testnet-snapshot.s3.ap-south-1.amazonaws.com/jun16/backup-file.tar.lz4"
 class NetworkType(str, Enum):
     MAINNET = "1"
     TESTNET = "2"
 
 
-SEED_PEERS="16bc9a252c2cb82c6aefdc82826f7d7021114f0a@13.127.165.58:26656"
+SEED_PEERS="36eb478177e691b3389cdc60ed618c57f2a4acd7@13.127.150.80:26656,16bc9a252c2cb82c6aefdc82826f7d7021114f0a@13.127.165.58:26656"
 GENESIS_JSON="https://tm.rpc.testnet.routerchain.dev/genesis"
 ROUTERD_FILE = "routerd.tar"
 ORCHESTRATORD_FILE = "router-orchestrator"
@@ -538,6 +538,24 @@ def get_gopath(go_executable_path):
     gopath = result.stdout.strip()
     return gopath
 
+def get_linux_distribution():
+    try:
+        with open('/etc/os-release', 'r') as f:
+            for line in f:
+                if line.startswith('ID='):
+                    distro_id = line.split('=')[1].strip().strip('"')
+                    return distro_id
+    except FileNotFoundError:
+        return "Unknown"
+
+def get_ubuntu_version():
+    try:
+        version = subprocess.check_output(['lsb_release', '-rs'], universal_newlines=True)
+        return float(version)
+    except Exception as e:
+        print("An error occurred: ", e)
+        return None
+
 def init_setup():
     global my_env
     global GOPATH
@@ -561,12 +579,34 @@ def init_setup():
         os.chdir(os.path.expanduser(HOME_DIR))
         print(bcolors.OKGREEN +
             "(4/4) Installing Router {v} Binary...".format(v=version) + bcolors.ENDC)
+        
+        debian_binary_url = f"{ROUTER_REPO}/debian/routerd.tar"
+        ubuntu_binary_url = f"{ROUTER_REPO}/routerd.tar"
 
-        response = requests.get(f"{ROUTER_REPO}/routerd.tar")
+        resource_url = debian_binary_url
+        if os_distribution == "debian":
+            print("debian distribution")
+        elif os_distribution == "ubuntu":
+            ubuntu_version = get_ubuntu_version()
+            print(f"ubuntu distribution {ubuntu_version}")
+            if ubuntu_version and ubuntu_version >= 22:
+                resource_url = ubuntu_binary_url
+        else:
+            print(f"Unknown distribution {os_distribution}")
+            raise Exception(f"Unknown distribution {os_distribution}")
+
+        response = requests.get(resource_url)
+
+        if response.status_code != 200:
+            print("Error downloading routerd.tar")
+            raise Exception("Error downloading routerd.tar")
+        
         with open(os.path.join(HOME_DIR, ROUTERD_FILE), "wb") as f:
             f.write(response.content)
+        
         subprocess.run(["tar -xvf routerd.tar -C ."], shell=True)
         subprocess.run(["sudo cp routerd /usr/bin"], shell=True)
+        subprocess.run(["sudo chmod +x /usr/bin/routerd"], shell=True)
         clear_screen()
         colorprint("Router {v} Installed Successfully!".format(v=version))
         colorprint("Installing dependencies...")
@@ -727,6 +767,7 @@ def start():
     global version
     global install_option
     global upgrade_orchestrator
+    global os_distribution
     global USER
     my_env = os.environ.copy()
     upgrade_orchestrator=False
@@ -746,6 +787,8 @@ def start():
     Testnet version: {t}
         """.format(
         t=NetworkVersion.TESTNET.value) + bcolors.ENDC)
+    os_distribution = get_linux_distribution()
+    print(f"os_distribution: ", os_distribution)
     # select to install router or orchestrator
     print("Select an option:")
     print("1. Install Validator (routerd) & Orchestrator")
