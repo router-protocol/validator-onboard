@@ -25,7 +25,7 @@ class NetworkType(str, Enum):
     TESTNET = "2"
 
 
-SEED_PEERS="16bc9a252c2cb82c6aefdc82826f7d7021114f0a@13.127.165.58:26656"
+SEED_PEERS="36eb478177e691b3389cdc60ed618c57f2a4acd7@13.127.150.80:26656,16bc9a252c2cb82c6aefdc82826f7d7021114f0a@13.127.165.58:26656"
 GENESIS_JSON="https://tm.rpc.testnet.routerchain.dev/genesis"
 ROUTERD_FILE = "routerd.tar"
 ORCHESTRATORD_FILE = "router-orchestrator"
@@ -548,6 +548,14 @@ def get_linux_distribution():
     except FileNotFoundError:
         return "Unknown"
 
+def get_ubuntu_version():
+    try:
+        version = subprocess.check_output(['lsb_release', '-rs'], universal_newlines=True)
+        return float(version)
+    except Exception as e:
+        print("An error occurred: ", e)
+        return None
+
 def init_setup():
     global my_env
     global GOPATH
@@ -572,19 +580,22 @@ def init_setup():
         print(bcolors.OKGREEN +
             "(4/4) Installing Router {v} Binary...".format(v=version) + bcolors.ENDC)
         
+        debian_binary_url = f"{ROUTER_REPO}/debian/routerd.tar"
+        ubuntu_binary_url = f"{ROUTER_REPO}/routerd.tar"
+
+        resource_url = debian_binary_url
         if os_distribution == "debian":
             print("debian distribution")
-            response = requests.get(f"{ROUTER_REPO}/debian/routerd.tar")
         elif os_distribution == "ubuntu":
-            ubuntu_version = subprocess.run(["lsb_release -r | awk '{print $2}'"], shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-            print(f"ubuntu distribution {ubuntu_version.stdout.strip()}")
-            if ubuntu_version.stdout.strip() == "20.04":
-                response = requests.get(f"{ROUTER_REPO}/debian/routerd.tar")
-            else:
-                response = requests.get(f"{ROUTER_REPO}/routerd.tar")
+            ubuntu_version = get_ubuntu_version()
+            print(f"ubuntu distribution {ubuntu_version}")
+            if ubuntu_version and ubuntu_version >= 22:
+                resource_url = ubuntu_binary_url
         else:
             print(f"Unknown distribution {os_distribution}")
             raise Exception(f"Unknown distribution {os_distribution}")
+
+        response = requests.get(resource_url)
 
         if response.status_code != 200:
             print("Error downloading routerd.tar")
