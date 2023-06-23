@@ -11,7 +11,7 @@ SNAPSHOT_URL=$1
 
 if [[ -z "$SNAPSHOT_URL" ]]; then
     echo "Snap shot url is not provided. Using default snapshot url"
-    SNAPSHOT_URL="https://routerchain-testnet-snapshot.s3.ap-south-1.amazonaws.com/routerd_snapshot_20230622104858.tar.lz4"
+    SNAPSHOT_URL="https://routerchain-testnet-snapshot.s3.ap-south-1.amazonaws.com/routerd_snapshot_20230623060121.tar.lz4"
 fi
 
 # Check if the system is Linux
