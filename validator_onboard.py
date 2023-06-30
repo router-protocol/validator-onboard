@@ -19,7 +19,7 @@ class NetworkVersion(str, Enum):
     TESTNET = "v1.0.0-rc1"
 version = NetworkVersion.TESTNET
 script_version = "v1.0.1"
-snapshot_url="https://routerchain-testnet-snapshot.s3.ap-south-1.amazonaws.com/routerd_snapshot_20230623060121.tar.lz4"
+snapshot_url="https://routerchain-testnet-snapshot.s3.ap-south-1.amazonaws.com/routerd_snapshot_20230630010002.tar.lz4"
 class NetworkType(str, Enum):
     MAINNET = "1"
     TESTNET = "2"
@@ -28,8 +28,8 @@ SEED_PEERS="36eb478177e691b3389cdc60ed618c57f2a4acd7@13.127.150.80:26656,16bc9a2
 GENESIS_JSON="https://tm.rpc.testnet.routerchain.dev/genesis"
 ROUTERD_FILE = "routerd.tar"
 ORCHESTRATORD_FILE = "router-orchestrator"
-ROUTER_REPO = "https://raw.githubusercontent.com/router-protocol/router-chain-releases/main/linux"
-ORCHESTRATOR_REPO = "https://raw.githubusercontent.com/router-protocol/router-chain-releases/main/linux"
+ROUTER_REPO = "https://raw.githubusercontent.com/router-protocol/router-chain-releases/main/linux/"
+ORCHESTRATOR_REPO = "https://raw.githubusercontent.com/router-protocol/router-chain-releases/main/linux/"
 
 ORCHESTRATOR_TEMPLATE="""
 {
@@ -272,8 +272,9 @@ def replace_genesis():
     print("replacing genesis...")
     genesis_filepath=os.path.join(routerd_home, "config/genesis.json")
     if not os.path.isfile(genesis_filepath):
-        print(bcolors.FAIL + "Genesis file not found. Please try again." + bcolors.ENDC)
-        exit(1)
+        error_msg="Genesis file not found. Please try again."
+        print(bcolors.FAIL + error_msg + bcolors.ENDC)
+        raise Exception(error_msg)
 
     with open(genesis_filepath, "r") as json_file:
         data = json.load(json_file)
@@ -545,15 +546,18 @@ def get_linux_distribution():
                     distro_id = line.split('=')[1].strip().strip('"')
                     return distro_id
     except FileNotFoundError:
-        return "Unknown"
+        error_msg = "Error getting Linux distribution."
+        print(error_msg)
+        raise Exception(error_msg)
 
 def get_ubuntu_version():
     try:
         version = subprocess.check_output(['lsb_release', '-rs'], universal_newlines=True)
         return float(version)
     except Exception as e:
-        print("An error occurred: ", e)
-        return None
+        error_msg = "Error getting Ubuntu version: {}".format(e)
+        print(error_msg)
+        raise Exception(error_msg)
 
 def init_setup():
     global my_env
@@ -578,24 +582,9 @@ def init_setup():
         os.chdir(os.path.expanduser(HOME_DIR))
         print(bcolors.OKGREEN +
             "(4/4) Installing Router {v} Binary...".format(v=version) + bcolors.ENDC)
-        
-        debian_binary_url = f"{ROUTER_REPO}/debian/routerd.tar"
-        ubuntu_binary_url = f"{ROUTER_REPO}/routerd.tar"
 
-        resource_url = debian_binary_url
-        if os_distribution == "debian":
-            print("debian distribution")
-        elif os_distribution == "ubuntu":
-            ubuntu_version = get_ubuntu_version()
-            print(f"ubuntu distribution {ubuntu_version}")
-            if ubuntu_version and ubuntu_version >= 22:
-                resource_url = ubuntu_binary_url
-        else:
-            print(f"Unknown distribution {os_distribution}")
-            raise Exception(f"Unknown distribution {os_distribution}")
-
-        response = requests.get(resource_url)
-
+        routerd_url = ROUTER_REPO + ROUTERD_FILE
+        response = requests.get(routerd_url)
         if response.status_code != 200:
             print("Error downloading routerd.tar")
             raise Exception("Error downloading routerd.tar")
@@ -761,6 +750,22 @@ def configure_orchestrator():
     print("Run 'sudo systemctl start orchestrator.service' to start orchestrator")
     print("Run 'journalctl -fu orchestrator.service -u -f' to see logs")
 
+def handle_debian():
+    print("debian distribution")
+    return "debian/"
+
+def handle_ubuntu():
+    ubuntu_version = get_ubuntu_version()
+    print(f"ubuntu distribution {ubuntu_version}")
+    if ubuntu_version and ubuntu_version < 22:
+        return "debian/"
+    return ""
+
+os_handlers = {
+    "debian": handle_debian,
+    "ubuntu": handle_ubuntu,
+}
+
 def start():
     global my_env
     global version
@@ -768,6 +773,8 @@ def start():
     global upgrade_orchestrator
     global os_distribution
     global USER
+    global ROUTER_REPO
+    global ORCHESTRATOR_REPO
     my_env = os.environ.copy()
     upgrade_orchestrator=False
     USER = subprocess.run(
@@ -788,6 +795,18 @@ def start():
         t=NetworkVersion.TESTNET.value) + bcolors.ENDC)
     os_distribution = get_linux_distribution()
     print(f"os_distribution: ", os_distribution)
+    # check if os_distribution is unknown or none
+    if not os_distribution:
+        print("Unknown distribution: ", os_distribution)
+        exit(1)
+    handler = os_handlers.get(os_distribution)
+    if handler:
+        append_path = handler()
+        ROUTER_REPO += append_path
+        ORCHESTRATOR_REPO += append_path
+    else:
+        print(f"Unknown distribution {os_distribution}")
+
     # select to install router or orchestrator
     print("Select an option:")
     print("1. Install Validator (routerd) & Orchestrator")
