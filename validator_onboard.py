@@ -6,6 +6,7 @@ import json
 import requests
 import argparse
 import sys
+import time
 import shutil
 import random
 import traceback
@@ -19,10 +20,15 @@ class NetworkVersion(str, Enum):
     TESTNET = "v1.0.0-rc1"
 version = NetworkVersion.TESTNET
 script_version = "v1.0.1"
-snapshot_url="https://routerchain-testnet-snapshot.s3.ap-south-1.amazonaws.com/routerd_snapshot_20230630010002.tar.lz4"
+snapshot_url="https://routerchain-testnet-snapshot.s3.ap-south-1.amazonaws.com/routerd_snapshot_827065_20230705142034.tar.lz4"
 class NetworkType(str, Enum):
     MAINNET = "1"
     TESTNET = "2"
+
+class ServiceStatus(str, Enum):
+    ACTIVE = "active"
+    INACTIVE = "inactive"
+    FAILED = "failed"
 
 SEED_PEERS="36eb478177e691b3389cdc60ed618c57f2a4acd7@13.127.150.80:26656,16bc9a252c2cb82c6aefdc82826f7d7021114f0a@13.127.165.58:26656,074d7d3c5d142cbec150093086055d73be0080cf@35.178.32.171:26656"
 GENESIS_JSON="https://tm.rpc.testnet.routerchain.dev/genesis"
@@ -145,6 +151,18 @@ snapshot_options = [
 ]
 
 
+
+def get_service_status(service_name):
+    try:
+        status = subprocess.check_output(
+            ["systemctl is-active " + service_name], shell=True).decode().strip()
+        if status == "active":
+            return ServiceStatus.ACTIVE
+        else:
+            return ServiceStatus.INACTIVE
+    except:
+        return ServiceStatus.FAILED
+
 def init_node_name():
     global nodeName
     nodeName = NetworkType.TESTNET
@@ -193,7 +211,7 @@ def remove_file(file_path):
 
 def download_replace_genesis():
     try:
-        colorprint("Downloading and Replacing Genesis...")
+        colorprint("Downloading and Replacing Genesis")
         download_genesis()
         replace_genesis()
         unsafe_reset()
@@ -214,11 +232,11 @@ def start_routerd_service():
 """ + bcolors.ENDC)
     choice = input("Enter your choice: ")
     if choice == "1":
-        print(bcolors.OKGREEN + "Setting up routerd as a service..." + bcolors.ENDC)
+        print(bcolors.OKGREEN + "Setting up routerd as a service" + bcolors.ENDC)
         setup_service()
         start_service()
     elif choice == "2":
-        print(bcolors.OKGREEN + "Skipping routerd service setup..." + bcolors.ENDC)
+        print(bcolors.OKGREEN + "Skipping routerd service setup" + bcolors.ENDC)
     else:
         print(bcolors.FAIL + "Invalid choice. Please try again." + bcolors.ENDC)
         start_routerd_service()
@@ -260,7 +278,7 @@ def start_service():
                    stderr=subprocess.DEVNULL, shell=True, env=my_env)
 
 def unsafe_reset():
-    print(bcolors.OKGREEN + "Resetting routerd..." + bcolors.ENDC)
+    print(bcolors.OKGREEN + "Resetting routerd" + bcolors.ENDC)
     subprocess.run(["routerd unsafe-reset-all --home " + routerd_home],
                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True, env=my_env)
 
@@ -269,7 +287,7 @@ def download_genesis():
                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True, env=my_env)
 
 def replace_genesis():
-    print("replacing genesis...")
+    print("replacing genesis")
     genesis_filepath=os.path.join(routerd_home, "config/genesis.json")
     if not os.path.isfile(genesis_filepath):
         error_msg="Genesis file not found. Please try again."
@@ -284,7 +302,7 @@ def replace_genesis():
         json.dump(result_genesis, json_file, indent=4)
 
 def find_replace_seeds():
-    colorprint("Finding and Replacing Seeds...")
+    colorprint("Finding and Replacing Seeds")
     replace_seeds(SEED_PEERS)
 
 def replace_seeds(peers):
@@ -373,12 +391,12 @@ def download_and_extract_snapshot():
     if ENABLE_SNAPSHOT == False:
         print(bcolors.OKGREEN + "Snapshot is disabled. Please choose another option" + bcolors.ENDC)
         dataSyncSelectionTest()
-    colorprint("Installing packages for snapshot extraction...")
+    colorprint("Installing packages for snapshot extraction")
     if os_name == "Linux":
         subprocess.run(["sudo apt-get install wget liblz4-tool aria2 -y"],
                        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True)
 
-    colorprint("Downloading Snapshot from " + snapshot_url + " ...")
+    colorprint("Downloading Snapshot from " + snapshot_url + " ")
     os.chdir(os.path.expanduser(routerd_home))
     subprocess.run(["wget -O - "+snapshot_url +
                    " | lz4 -d | tar -xvf -"], shell=True, env=my_env)
@@ -391,6 +409,101 @@ def complete():
     print(bcolors.OKGREEN +
           "You can start routerd with the following command: 'routerd start'" + bcolors.ENDC)
     quit()
+
+# restart orchestrator if its running
+def restart_orchestrator():
+    orchestrator_status = get_service_status("orchestrator.service")
+    if orchestrator_status == ServiceStatus.ACTIVE:
+        print(bcolors.OKGREEN + "Restarting orchestrator" + bcolors.ENDC)
+        subprocess.run(["sudo systemctl restart orchestrator.service"], shell=True)
+    else:
+        print(bcolors.OKGREEN + "Orchestrator is not running, skipping" + bcolors.ENDC)
+
+def user_confirm(prompt):
+    print(f'{bcolors.OKGREEN}{prompt} (y/n){bcolors.ENDC}')
+    return input(f'{bcolors.OKGREEN}Enter Choice: {bcolors.ENDC}') == "y"
+
+def run_command(command, error_message=None):
+    result = subprocess.run(command, capture_output=True, shell=True, text=True)
+    if result.returncode != 0 and error_message:
+        raise Exception(error_message)
+    return result.stdout.strip()
+
+def download_file(url, target_dir):
+    response = requests.get(url)
+    if response.status_code != 200:
+        raise Exception(f'Error downloading from {url}')
+    with open(target_dir, 'wb') as f:
+        f.write(response.content)
+
+def upgrade_routerd():
+    global upgrade_orchestrator
+    try:
+        if not user_confirm("Do you want to upgrade routerd?") or \
+           not user_confirm("Have you taken a backup of your node before proceeding?"):
+            print(f'{bcolors.OKGREEN}Exiting{bcolors.ENDC}')
+            return
+        
+        cosmovisor_status = get_service_status("cosmovisor.service")
+        if cosmovisor_status == ServiceStatus.ACTIVE:
+            print(f'{bcolors.OKGREEN}Stopping cosmovisor{bcolors.ENDC}')
+            run_command(["sudo systemctl stop cosmovisor.service"], "Error stopping cosmovisor")
+
+        routerd_dir = os.path.join(HOME_DIR, "routerd_upgrade")
+        os.makedirs(routerd_dir, exist_ok=True)
+        os.chdir(routerd_dir)
+
+        print(f'{bcolors.OKGREEN}Downloading routerd{bcolors.ENDC}')
+        download_file(ROUTER_REPO + ROUTERD_FILE, os.path.join(routerd_dir, ROUTERD_FILE))
+        run_command(["tar -xvf routerd.tar -C ."], "Error extracting routerd.tar")
+        run_command(["sudo chmod +x routerd"], "Error setting routerd as executable")
+
+        routerd_home = run_command(["which routerd"], "Error finding routerd binary location")
+
+        if routerd_home == "":
+            if not user_confirm("routerd is not installed in default location. Do you want to install in default location?"):
+                print(f'{bcolors.OKGREEN}Exiting{bcolors.ENDC}')
+                return
+            routerd_home = "/usr/bin/routerd"
+
+        run_command(["sudo rm -rf " + routerd_home], "Error deleting old routerd binary")
+        run_command(["sudo cp routerd " + routerd_home], "Error moving new routerd binary to current location")
+
+        routerd_home = os.path.join(HOME_DIR, ".routerd")
+        if not os.path.exists(routerd_home):
+            routerd_home = input(f'{bcolors.OKGREEN}Enter routerd home directory: {bcolors.ENDC}')
+            if not os.path.exists(routerd_home):
+                raise Exception("Invalid routerd home directory")
+
+        print(f'{bcolors.OKGREEN}Upgrading binary{bcolors.ENDC}')
+        run_command(["cp routerd "+routerd_home +"/cosmovisor/current/bin"], "Error copying new routerd binary")
+        run_command(["sudo chmod +x " + routerd_home], "Error setting new routerd binary as executable")
+
+        ORCHESTRATOR_DIR = ".router-orchestrator"
+        ORCHESTRATOR_PATH = os.path.join(HOME_DIR, ORCHESTRATOR_DIR)
+        if os.path.exists(ORCHESTRATOR_PATH):
+            print(f"Upgrading orchestrator")
+            upgrade_orchestrator=True
+            setup_orchestrator()
+
+        print(f'{bcolors.OKGREEN}Starting cosmovisor (routerd service){bcolors.ENDC}')
+        run_command(["sudo systemctl start cosmovisor.service"], "Error starting cosmovisor.service")
+
+        time.sleep(10)
+
+        if get_service_status("cosmovisor.service") != ServiceStatus.ACTIVE:
+            raise Exception("Error starting cosmovisor")
+        
+        if os.path.exists(ORCHESTRATOR_PATH):
+            print(f'{bcolors.OKGREEN}Restarting orchestrator{bcolors.ENDC}')
+            restart_orchestrator()
+
+        print(f'{bcolors.OKGREEN}routerd upgrade completed successfully{bcolors.ENDC}')
+        print(f'{bcolors.OKGREEN}To see logs, run the following command: "journalctl -u cosmovisor.service -f"{bcolors.ENDC}')
+
+    except Exception as e:
+        print(f'{bcolors.OKGREEN}Error upgrading routerd{bcolors.ENDC}')
+        raise e
 
 def install_location():
     global routerd_home
@@ -438,11 +551,11 @@ def download_and_copy_libs():
                 " /lib64"], shell=True, env=my_env)
 
 def cosmovisor_init():
-    print(bcolors.OKGREEN + "Initializing cosmovisor..." + bcolors.ENDC)
+    print(bcolors.OKGREEN + "Initializing cosmovisor" + bcolors.ENDC)
     clear_screen()
     os.chdir(os.path.expanduser(HOME))
 
-    colorprint("Setting Up Cosmovisor...")
+    colorprint("Setting Up Cosmovisor")
     subprocess.run(["go install github.com/cosmos/cosmos-sdk/cosmovisor/cmd/cosmovisor@v1.0.0"],
                     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True, env=my_env)
     subprocess.run(["mkdir -p "+routerd_home+"/cosmovisor"],
@@ -565,23 +678,23 @@ def init_setup():
     clear_screen()
     print(bcolors.OKGREEN + "Installing Dependencies" + bcolors.ENDC)
     if os_name == "Linux":
-        colorprint("(1/4) Updating Packages...")
+        colorprint("(1/4) Updating Packages")
         subprocess.run(["sudo apt-get update"],
         stdout=subprocess.DEVNULL, shell=True)
         subprocess.run(["sudo DEBIAN_FRONTEND=noninteractive apt-get -y upgrade"],
         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True)
-        colorprint("(2/4) Installing make and GCC...")
+        colorprint("(2/4) Installing make and GCC")
         subprocess.run(["sudo apt install git build-essential ufw curl jq snapd --yes"],
         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True)
 
-        colorprint("(3/4) Installing Go...")
+        colorprint("(3/4) Installing Go")
         subprocess.run(["wget -q -O - https://git.io/vQhTU | bash -s -- --remove"],
         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True)
         subprocess.run(["wget -q -O - https://git.io/vQhTU | bash -s -- --version 1.19"],
         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True)
         os.chdir(os.path.expanduser(HOME_DIR))
         print(bcolors.OKGREEN +
-            "(4/4) Installing Router {v} Binary...".format(v=version) + bcolors.ENDC)
+            "(4/4) Installing Router {v} Binary".format(v=version) + bcolors.ENDC)
 
         routerd_url = ROUTER_REPO + ROUTERD_FILE
         response = requests.get(routerd_url)
@@ -597,7 +710,7 @@ def init_setup():
         subprocess.run(["sudo chmod +x /usr/bin/routerd"], shell=True)
         clear_screen()
         colorprint("Router {v} Installed Successfully!".format(v=version))
-        colorprint("Installing dependencies...")
+        colorprint("Installing dependencies")
         my_env = os.environ.copy()
         my_env["PATH"] = "/"+HOME+"/go/bin:/"+HOME + \
             "/go/bin:/"+HOME+"/.go/bin:" + my_env["PATH"]
@@ -626,6 +739,7 @@ def setup():
                 exit(1)
             elif choice == "y":
                 pass
+        os.chdir(os.path.expanduser(HOME))
         init_setup()
         install_location()
     elif os_name == "Darwin":
@@ -653,19 +767,26 @@ def setup_orchestrator():
     elif os_name == "Windows":
         print("Windows not supported yet")
     else:
-        print("Unknown OS, exiting...")
+        print("Unknown OS, exiting")
 
 def install_orchestrator():
     # stop if already running
-    subprocess.run(["sudo systemctl stop orchestrator.service"], shell=True)
-    subprocess.run(["sudo rm -rf /lib/systemd/system/orchestrator.service"], shell=True)
+    # cd to path HOME_DIR
+    os.chdir(HOME_DIR)
+    orchestrator_status = get_service_status("orchestrator.service")
+    if orchestrator_status == ServiceStatus.ACTIVE:
+        print(bcolors.OKGREEN + "Stopping orchestrator" + bcolors.ENDC)
+        subprocess.run(["sudo systemctl stop orchestrator.service"], shell=True)
+        subprocess.run(["sudo rm -rf /lib/systemd/system/orchestrator.service"], shell=True)
     
     if os.path.exists(os.path.join(HOME_DIR, ORCHESTRATORD_FILE)):
         os.remove(os.path.join(HOME_DIR, ORCHESTRATORD_FILE))
 
-    subprocess.run(["sudo rm -rf /usr/bin/router-orchestrator"], shell=True)
+    orchestrator_home = subprocess.run(["which router-orchestrator"], capture_output=True, shell=True, text=True).stdout.strip()
+    if orchestrator_home != "":
+        subprocess.run(["sudo rm -rf " + orchestrator_home], shell=True)
 
-    print(bcolors.OKGREEN + "Installing Orchestrator..." + bcolors.ENDC)
+    print(bcolors.OKGREEN + "Installing Orchestrator" + bcolors.ENDC)
     response = requests.get(f"{ORCHESTRATOR_REPO}/{ORCHESTRATORD_FILE}")
     with open(os.path.join(HOME_DIR, ORCHESTRATORD_FILE), "wb") as f:
         f.write(response.content)
@@ -679,9 +800,7 @@ def setup_orchestrator_service():
     # stop if already running
     global ORCHESTRATOR_PATH
     global ORCHESTRATOR_DIR
-    print(bcolors.OKGREEN + "Setting up Orchestrator Service..." + bcolors.ENDC)
-    subprocess.run(["sudo systemctl stop orchestrator.service"], stdout=subprocess.DEVNULL,
-                   stderr=subprocess.DEVNULL, shell=True, env=my_env)
+    print(bcolors.OKGREEN + "Setting up Orchestrator Service" + bcolors.ENDC)
     ORCHESTRATOR_DIR = ".router-orchestrator"
     ORCHESTRATOR_PATH = os.path.join(HOME_DIR, ORCHESTRATOR_DIR)
     orchestrator_service_file_content = f'''[Unit]
@@ -731,7 +850,7 @@ def print_system_info():
 
 
 def configure_orchestrator():
-    print(bcolors.OKGREEN + "Configuring Orchestrators..." + bcolors.ENDC)
+    print(bcolors.OKGREEN + "Configuring Orchestrators" + bcolors.ENDC)
     print(f"Current directory: {os.getcwd()}")
     print(f"Checking if directory '{ORCHESTRATOR_DIR}' exists")
 
@@ -813,6 +932,8 @@ def start():
     print("2. Install Validator (routerd)")
     print("3. Install Orchestrator")
     print("4. Upgrade Orchestrator")
+    print("5. Upgrade Router (routerd)")
+    print("6. Exit")
     option = input("Enter option: ")
     try:
         if option == "1":
@@ -826,7 +947,7 @@ def start():
             completeCosmovisor()
         elif option == "2":
             install_option=2
-            print("Installing Router...")
+            print("Installing Router")
             setup()
         elif option == "3":
             install_option=3
@@ -835,6 +956,13 @@ def start():
             install_option=4
             upgrade_orchestrator=True
             setup_orchestrator()
+        elif option == "5":
+            install_option=5
+            print("Upgrading Router")
+            upgrade_routerd()
+        elif option == "6":
+            print("Exiting")
+            exit(0)
         else:
             print("Invalid option")
             exit(1)
