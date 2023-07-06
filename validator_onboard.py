@@ -20,7 +20,7 @@ class NetworkVersion(str, Enum):
     TESTNET = "v1.0.0-rc1"
 version = NetworkVersion.TESTNET
 script_version = "v1.0.1"
-snapshot_url="https://routerchain-testnet-snapshot.s3.ap-south-1.amazonaws.com/routerd_snapshot_827065_20230705142034.tar.lz4"
+snapshot_url="https://routerchain-testnet-snapshot.s3.ap-south-1.amazonaws.com/routerd_snapshot_839083_20230706010001.tar.lz4"
 class NetworkType(str, Enum):
     MAINNET = "1"
     TESTNET = "2"
