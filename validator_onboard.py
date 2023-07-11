@@ -20,7 +20,7 @@ class NetworkVersion(str, Enum):
     TESTNET = "v1.0.0-rc1"
 version = NetworkVersion.TESTNET
 script_version = "v1.0.1"
-snapshot_url="https://routerchain-testnet-snapshot.s3.ap-south-1.amazonaws.com/routerd_snapshot_839083_20230706010001.tar.lz4"
+snapshot_url="https://routerchain-testnet-snapshot.s3.ap-south-1.amazonaws.com/routerd_snapshot_992562_20230711152724.tar.lz4"
 class NetworkType(str, Enum):
     MAINNET = "1"
     TESTNET = "2"
@@ -36,6 +36,7 @@ ROUTERD_FILE = "routerd.tar"
 ORCHESTRATORD_FILE = "router-orchestrator"
 ROUTER_REPO = "https://raw.githubusercontent.com/router-protocol/router-chain-releases/main/linux/"
 ORCHESTRATOR_REPO = "https://raw.githubusercontent.com/router-protocol/router-chain-releases/main/linux/"
+CHAIN_ID="router_9601-1"
 
 ORCHESTRATOR_TEMPLATE="""
 {
@@ -199,7 +200,7 @@ def setup_testnet():
 
 def setup_router_node():
     clear_config_files()
-    subprocess.run(["routerd init " + nodeName + " --chain-id=router_9601-1 -o --home " + routerd_home],
+    subprocess.run(["routerd init " + nodeName + " --chain-id="+ CHAIN_ID +" -o --home " + routerd_home],
                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True, env=my_env)
 
 def clear_config_files():
@@ -243,7 +244,8 @@ def start_routerd_service():
 
 def setup_service():
     # stop if already running
-    routerd_service_file_content = f'''[Unit]
+    routerd_service_file_content = f'''
+[Unit]
 Description=routerd
 After=network.target
 
