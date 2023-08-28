@@ -17,10 +17,10 @@ from subprocess import check_call
 
 
 class NetworkVersion(str, Enum):
-    TESTNET = "v1.0.0-rc1"
+    TESTNET = "v1.0.0-rc2"
 version = NetworkVersion.TESTNET
 script_version = "v1.0.1"
-snapshot_url="https://routerchain-testnet-snapshot.s3.ap-south-1.amazonaws.com/routerd_snapshot_1436682_20230811010002.tar.lz4"
+snapshot_url="https://routerchain-testnet-snapshot.s3.ap-south-1.amazonaws.com/routerd_snapshot_275416_20230828155513.tar.lz4"
 class NetworkType(str, Enum):
     MAINNET = "1"
     TESTNET = "2"
@@ -30,8 +30,8 @@ class ServiceStatus(str, Enum):
     INACTIVE = "inactive"
     FAILED = "failed"
 
-SEED_PEERS="36eb478177e691b3389cdc60ed618c57f2a4acd7@13.127.150.80:26656,16bc9a252c2cb82c6aefdc82826f7d7021114f0a@13.127.165.58:26656,074d7d3c5d142cbec150093086055d73be0080cf@35.178.32.171:26656"
-GENESIS_JSON="https://tm.rpc.testnet.routerchain.dev/genesis"
+SEED_PEERS="89ec0f07f0ccb61ec19fb8256043cf92e73abd2b@15.206.157.168:26656,50dc3cca9f3b3f969b812e5760bcaf652aaecc01@43.205.136.8:26656,3df6cb2db301288c492f9ace1b88360e0504b15a@13.235.115.79:26656"
+GENESIS_JSON="https://tm.rpc.testnet-eu.routerchain.dev/genesis"
 ROUTERD_FILE = "routerd.tar"
 ORCHESTRATORD_FILE = "router-orchestrator"
 ROUTER_REPO = "https://raw.githubusercontent.com/router-protocol/router-chain-releases/main/linux/"
@@ -306,6 +306,11 @@ def replace_genesis():
 def find_replace_seeds():
     colorprint("Finding and Replacing Seeds")
     replace_seeds(SEED_PEERS)
+
+def update_state_sync(tmrpc):
+    config_toml = os.path.join(routerd_home, "config/config.toml")
+    subprocess.run(["sed -i -E 's/persistent_peers = \"\"/persistent_peers = \"" + peers + "\"/g' " + config_toml], shell=True)
+
 
 def replace_seeds(peers):
     config_toml = os.path.join(routerd_home, "config/config.toml")
