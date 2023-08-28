@@ -17,10 +17,10 @@ from subprocess import check_call
 
 
 class NetworkVersion(str, Enum):
-    TESTNET = "v1.0.0-rc1"
+    TESTNET = "v1.0.0-rc2"
 version = NetworkVersion.TESTNET
 script_version = "v1.0.1"
-snapshot_url="https://routerchain-testnet-snapshot.s3.ap-south-1.amazonaws.com/routerd_snapshot_89184_20230825174941.tar.lz4"
+snapshot_url="https://routerchain-testnet-snapshot.s3.ap-south-1.amazonaws.com/routerd_snapshot_275416_20230828155513.tar.lz4"
 class NetworkType(str, Enum):
     MAINNET = "1"
     TESTNET = "2"
@@ -306,6 +306,11 @@ def replace_genesis():
 def find_replace_seeds():
     colorprint("Finding and Replacing Seeds")
     replace_seeds(SEED_PEERS)
+
+def update_state_sync(tmrpc):
+    config_toml = os.path.join(routerd_home, "config/config.toml")
+    subprocess.run(["sed -i -E 's/persistent_peers = \"\"/persistent_peers = \"" + peers + "\"/g' " + config_toml], shell=True)
+
 
 def replace_seeds(peers):
     config_toml = os.path.join(routerd_home, "config/config.toml")
