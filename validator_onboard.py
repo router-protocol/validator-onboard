@@ -307,9 +307,9 @@ def find_replace_seeds():
     colorprint("Finding and Replacing Seeds")
     replace_seeds(SEED_PEERS)
 
-def update_state_sync(tmrpc):
-    config_toml = os.path.join(routerd_home, "config/config.toml")
-    subprocess.run(["sed -i -E 's/persistent_peers = \"\"/persistent_peers = \"" + peers + "\"/g' " + config_toml], shell=True)
+# def update_state_sync(tmrpc):
+#     config_toml = os.path.join(routerd_home, "config/config.toml")
+#     subprocess.run(["sed -i -E 's/persistent_peers = \"\"/persistent_peers = \"" + peers + "\"/g' " + config_toml], shell=True)
 
 
 def replace_seeds(peers):
