@@ -940,7 +940,8 @@ def start():
     print("3. Install Orchestrator")
     print("4. Upgrade Orchestrator")
     print("5. Upgrade Router (routerd)")
-    print("6. Exit")
+    print("6. Upgrade Router (routerd) & Orchestrator")
+    print("7. Exit")
     option = input("Enter option: ")
     try:
         if option == "1":
@@ -968,6 +969,14 @@ def start():
             print("Upgrading Router")
             upgrade_routerd()
         elif option == "6":
+            install_option=5
+            print("Upgrading Router")
+            upgrade_routerd()
+
+            install_option=4
+            upgrade_orchestrator=True
+            setup_orchestrator()
+        elif option == "7":
             print("Exiting")
             exit(0)
         else:
