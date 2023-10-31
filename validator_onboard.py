@@ -20,7 +20,11 @@ class NetworkVersion(str, Enum):
     TESTNET = "v1.0.0-rc2"
 version = NetworkVersion.TESTNET
 script_version = "v1.0.1"
-snapshot_url="https://routerchain-testnet-snapshot.s3.ap-south-1.amazonaws.com/routerd_snapshot_285479_20230828194247.tar.lz4"
+
+SNAP_NAME=$(curl -s https://ss-t.router.nodestake.top/ | egrep -o ">20.*\.tar.lz4" | tr -d ">")
+snapshot_url="https://ss-t.router.nodestake.top/${SNAP_NAME}"
+
+# snapshot_url="https://routerchain-testnet-snapshot.s3.ap-south-1.amazonaws.com/routerd_snapshot_285479_20230828194247.tar.lz4"
 class NetworkType(str, Enum):
     MAINNET = "1"
     TESTNET = "2"
@@ -31,7 +35,7 @@ class ServiceStatus(str, Enum):
     FAILED = "failed"
 
 SEED_PEERS="89ec0f07f0ccb61ec19fb8256043cf92e73abd2b@15.206.157.168:26656,50dc3cca9f3b3f969b812e5760bcaf652aaecc01@43.205.136.8:26656,3df6cb2db301288c492f9ace1b88360e0504b15a@13.235.115.79:26656"
-GENESIS_JSON="https://tm.rpc.testnet-eu.routerchain.dev/genesis"
+GENESIS_JSON="https://tm.rpc.testnet.routerchain.dev/genesis"
 ROUTERD_FILE = "routerd.tar"
 ORCHESTRATORD_FILE = "router-orchestrator"
 ROUTER_REPO = "https://raw.githubusercontent.com/router-protocol/router-chain-releases/main/linux/"
