@@ -10,6 +10,8 @@ import time
 import shutil
 import random
 import traceback
+import requests
+import re
 from subprocess import check_call
 
 # self-destruct file after first call
@@ -21,7 +23,14 @@ class NetworkVersion(str, Enum):
 version = NetworkVersion.TESTNET
 script_version = "v1.0.1"
 
-SNAP_NAME=$(curl -s https://ss-t.router.nodestake.top/ | egrep -o ">20.*\.tar.lz4" | tr -d ">")
+response = requests.get("https://ss-t.router.nodestake.top/")
+content = response.text
+
+SNAP_NAME= ""
+match = re.search(r">20.*\.tar\.lz4", content)
+if match:
+    SNAP_NAME = match.group(0)[1:]  # remove the leading ">"
+# SNAP_NAME=$(curl -s https://ss-t.router.nodestake.top/ | egrep -o ">20.*\.tar.lz4" | tr -d ">")
 snapshot_url="https://ss-t.router.nodestake.top/${SNAP_NAME}"
 
 # snapshot_url="https://routerchain-testnet-snapshot.s3.ap-south-1.amazonaws.com/routerd_snapshot_285479_20230828194247.tar.lz4"
