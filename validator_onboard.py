@@ -11,7 +11,6 @@ import shutil
 import random
 import traceback
 import requests
-import re
 from subprocess import check_call
 
 # self-destruct file after first call
@@ -23,17 +22,7 @@ class NetworkVersion(str, Enum):
 version = NetworkVersion.TESTNET
 script_version = "v1.0.1"
 
-response = requests.get("https://ss-t.router.nodestake.top/")
-content = response.text
-
-SNAP_NAME= ""
-match = re.search(r">20.*\.tar\.lz4", content)
-if match:
-    SNAP_NAME = match.group(0)[1:]  # remove the leading ">"
-# SNAP_NAME=$(curl -s https://ss-t.router.nodestake.top/ | egrep -o ">20.*\.tar.lz4" | tr -d ">")
-snapshot_url="https://ss-t.router.nodestake.top/${SNAP_NAME}"
-
-# snapshot_url="https://routerchain-testnet-snapshot.s3.ap-south-1.amazonaws.com/routerd_snapshot_285479_20230828194247.tar.lz4"
+snapshot_url="https://routerchain-testnet-snapshot.s3.ap-south-1.amazonaws.com/routerd_snapshot_2481920_20231101122931.tar.lz4"
 class NetworkType(str, Enum):
     MAINNET = "1"
     TESTNET = "2"
@@ -47,8 +36,8 @@ SEED_PEERS="89ec0f07f0ccb61ec19fb8256043cf92e73abd2b@15.206.157.168:26656,50dc3c
 GENESIS_JSON="https://tm.rpc.testnet.routerchain.dev/genesis"
 ROUTERD_FILE = "routerd.tar"
 ORCHESTRATORD_FILE = "router-orchestrator"
-ROUTER_REPO = "https://raw.githubusercontent.com/router-protocol/router-chain-releases/main/linux/"
-ORCHESTRATOR_REPO = "https://raw.githubusercontent.com/router-protocol/router-chain-releases/main/linux/"
+ROUTER_REPO = "https://raw.githubusercontent.com/router-protocol/router-chain-releases/92803e67ad9f4b8d547039187ed2f962b315e06f/linux/"
+ORCHESTRATOR_REPO = "https://raw.githubusercontent.com/router-protocol/router-chain-releases/92803e67ad9f4b8d547039187ed2f962b315e06f/linux/"
 CHAIN_ID="router_9601-1"
 
 ORCHESTRATOR_TEMPLATE="""
