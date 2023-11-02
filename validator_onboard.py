@@ -16,7 +16,6 @@ from subprocess import check_call
 # self-destruct file after first call
 # os.remove(sys.argv[0])
 
-
 class NetworkVersion(str, Enum):
     TESTNET = "v1.0.0-rc2"
 version = NetworkVersion.TESTNET
@@ -36,8 +35,8 @@ SEED_PEERS="89ec0f07f0ccb61ec19fb8256043cf92e73abd2b@15.206.157.168:26656,50dc3c
 GENESIS_JSON="https://tm.rpc.testnet.routerchain.dev/genesis"
 ROUTERD_FILE = "routerd.tar"
 ORCHESTRATORD_FILE = "router-orchestrator"
-ROUTER_REPO = "https://raw.githubusercontent.com/router-protocol/router-chain-releases/92803e67ad9f4b8d547039187ed2f962b315e06f/linux/"
-ORCHESTRATOR_REPO = "https://raw.githubusercontent.com/router-protocol/router-chain-releases/92803e67ad9f4b8d547039187ed2f962b315e06f/linux/"
+ROUTER_REPO = "https://raw.githubusercontent.com/router-protocol/router-chain-releases/main/linux/"
+ORCHESTRATOR_REPO = "https://raw.githubusercontent.com/router-protocol/router-chain-releases/main/linux/"
 CHAIN_ID="router_9601-1"
 
 ORCHESTRATOR_TEMPLATE="""
@@ -699,7 +698,7 @@ def init_setup():
         colorprint("(3/4) Installing Go")
         subprocess.run(["wget -q -O - https://git.io/vQhTU | bash -s -- --remove"],
         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True)
-        subprocess.run(["wget -q -O - https://git.io/vQhTU | bash -s -- --version 1.19"],
+        subprocess.run(["wget -q -O - https://git.io/vQhTU | bash -s -- --version 1.20"],
         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True)
         os.chdir(os.path.expanduser(HOME_DIR))
         print(bcolors.OKGREEN +
