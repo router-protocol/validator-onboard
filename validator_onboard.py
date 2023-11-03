@@ -35,9 +35,12 @@ SEED_PEERS="89ec0f07f0ccb61ec19fb8256043cf92e73abd2b@15.206.157.168:26656,50dc3c
 GENESIS_JSON="https://tm.rpc.testnet.routerchain.dev/genesis"
 ROUTERD_FILE = "routerd.tar"
 ORCHESTRATORD_FILE = "router-orchestrator"
-ROUTER_REPO = "https://raw.githubusercontent.com/router-protocol/router-chain-releases/main/linux/"
+ROUTER_REPO = "https://routerchain-testnet-snapshot.s3.ap-south-1.amazonaws.com/routerd_v1.2-to-v1.2.1/linux/"
 ORCHESTRATOR_REPO = "https://raw.githubusercontent.com/router-protocol/router-chain-releases/main/linux/"
 CHAIN_ID="router_9601-1"
+
+ROUTERD_BINARY_v1_2_to_v1_2_1_linux="https://routerchain-testnet-snapshot.s3.ap-south-1.amazonaws.com/routerd_v1.2-to-v1.2.1/linux/routerd"
+ROUTERD_BINARY_v1_2_1_to_v1_2_2_linux="https://raw.githubusercontent.com/router-protocol/router-chain-releases/main/linux/routerd.tar"
 
 ORCHESTRATOR_TEMPLATE="""
 {
@@ -576,6 +579,23 @@ def cosmovisor_init():
         ["mkdir -p "+routerd_home+"/cosmovisor/upgrades"], shell=True, env=my_env)
     subprocess.run(
         ["mkdir -p "+routerd_home+"/cosmovisor/upgrades/v1/bin"], shell=True, env=my_env)
+    subprocess.run(
+        ["mkdir -p "+routerd_home+"/cosmovisor/upgrades/v1.2-to-v1.2.1/bin"], shell=True, env=my_env)
+    subprocess.run(
+        ["mkdir -p "+routerd_home+"/cosmovisor/upgrades/v1.2.1-to-v1.2.2/bin"], shell=True, env=my_env)
+    subprocess.run(
+        ["mkdir -p "+routerd_home+"/cosmovisor/current/bin"], shell=True, env=my_env)
+
+    subprocess.run(
+        ["wget -O "+routerd_home+"/cosmovisor/upgrades/v1.2-to-v1.2.1/bin/routerd "+ROUTERD_BINARY_v1_2_to_v1_2_1_linux], 
+        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True, env=my_env)
+
+    subprocess.run(
+        ["wget -O "+routerd_home+"/cosmovisor/upgrades/v1.2.1-to-v1.2.2/bin/routerd.tar "+ROUTERD_BINARY_v1_2_1_to_v1_2_2_linux],
+        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True, env=my_env)
+    subprocess.run(
+        ["tar -xvf "+routerd_home+"/cosmovisor/upgrades/v1.2.1-to-v1.2.2/bin/routerd.tar -C "+routerd_home+"/cosmovisor/upgrades/v1.2.1-to-v1.2.2/bin"],
+        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True, env=my_env)
 
     subprocess.run(["cp /usr/bin/routerd "+routerd_home+"/cosmovisor/upgrades/v1/bin"],
                     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True, env=my_env)
@@ -713,6 +733,10 @@ def init_setup():
         with open(os.path.join(HOME_DIR, ROUTERD_FILE), "wb") as f:
             f.write(response.content)
         
+        if not os.path.exists(os.path.join(HOME_DIR, ROUTERD_FILE)):
+            print("Error downloading routerd.tar: "+ routerd_url)
+            raise Exception("Error downloading routerd.tar")
+
         subprocess.run(["tar -xvf routerd.tar -C ."], shell=True)
         subprocess.run(["sudo cp routerd /usr/bin"], shell=True)
         subprocess.run(["sudo chmod +x /usr/bin/routerd"], shell=True)
