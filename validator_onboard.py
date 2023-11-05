@@ -20,6 +20,7 @@ class NetworkVersion(str, Enum):
     TESTNET = "v1.0.0-rc2"
 version = NetworkVersion.TESTNET
 script_version = "v1.0.1"
+routerd_version_name="v1.2.1-to-v1.2.2"
 
 snapshot_url="https://routerchain-testnet-snapshot.s3.ap-south-1.amazonaws.com/routerd_snapshot_2481920_20231101122931.tar.lz4"
 class NetworkType(str, Enum):
@@ -477,7 +478,7 @@ def upgrade_routerd():
                 return
             routerd_home = "/usr/bin/routerd"
 
-        run_command(["sudo rm -rf " + routerd_home], "Error deleting old routerd binary")
+        # run_command(["sudo rm -rf " + routerd_home], "Error deleting old routerd binary")
         run_command(["sudo cp routerd " + routerd_home], "Error moving new routerd binary to current location")
 
         routerd_home = os.path.join(HOME_DIR, ".routerd")
@@ -487,7 +488,8 @@ def upgrade_routerd():
                 raise Exception("Invalid routerd home directory")
 
         print(f'{bcolors.OKGREEN}Upgrading binary{bcolors.ENDC}')
-        run_command(["cp routerd "+routerd_home +"/cosmovisor/current/bin"], "Error copying new routerd binary")
+        run_command(["cp routerd "+ routerd_home +"/cosmovisor/current/bin"], "Error copying new routerd binary to cosmovisor/current directory")
+        run_command(["cp routerd "+ routerd_home +"/cosmovisor/upgrades/"+routerd_version_name+"/bin"], "Error copying new routerd binary to cosmovisor/upgrade directory")
         run_command(["sudo chmod +x " + routerd_home], "Error setting new routerd binary as executable")
 
         ORCHESTRATOR_DIR = ".router-orchestrator"
@@ -791,9 +793,16 @@ def setup_orchestrator():
             ["echo $HOME"], capture_output=True, shell=True, text=True).stdout.strip()
     GOPATH = HOME+"/go"
     if os_name == "Linux":
+        # installing orchestrator binary and service
         install_orchestrator()
         if upgrade_orchestrator == False:
             configure_orchestrator()
+        else:
+            subprocess.run(["sudo systemctl start orchestrator.service"], shell=True)
+            subprocess.run(["sudo systemctl status orchestrator.service"], shell=True)
+            print(f"{bcolors.OKGREEN}Orchestrator upgrade completed successfully{bcolors.ENDC}")
+            print(f"{bcolors.OKGREEN}To see logs, run the following command: 'journalctl -u orchestrator.service -f'{bcolors.ENDC}")
+
     elif os_name == "Darwin":
         print("Mac not supported yet")
     elif os_name == "Windows":
@@ -809,7 +818,6 @@ def install_orchestrator():
     if orchestrator_status == ServiceStatus.ACTIVE:
         print(bcolors.OKGREEN + "Stopping orchestrator" + bcolors.ENDC)
         subprocess.run(["sudo systemctl stop orchestrator.service"], shell=True)
-        subprocess.run(["sudo rm -rf /lib/systemd/system/orchestrator.service"], shell=True)
     
     if os.path.exists(os.path.join(HOME_DIR, ORCHESTRATORD_FILE)):
         os.remove(os.path.join(HOME_DIR, ORCHESTRATORD_FILE))
@@ -826,7 +834,29 @@ def install_orchestrator():
     subprocess.run(["sudo cp router-orchestrator /usr/bin"], shell=True)
     subprocess.run(["sudo chmod +x /usr/bin/router-orchestrator"], shell=True)
     download_and_copy_libs()
+    subprocess.run(["sudo rm -rf /lib/systemd/system/orchestrator.service"], shell=True)
     setup_orchestrator_service()
+
+def upgrade_orchestrator_binary():
+    # stop if already running
+    # cd to path HOME_DIR
+    os.chdir(HOME_DIR)
+    orchestrator_status = get_service_status("orchestrator.service")
+    if orchestrator_status == ServiceStatus.ACTIVE:
+        print(bcolors.OKGREEN + "Stopping orchestrator" + bcolors.ENDC)
+        subprocess.run(["sudo systemctl stop orchestrator.service"], shell=True)
+    
+    orchestrator_binary_path = subprocess.run(["which router-orchestrator"], capture_output=True, shell=True, text=True).stdout.strip()
+    if orchestrator_binary_path != "":
+        subprocess.run(["sudo rm -rf " + orchestrator_binary_path], shell=True)
+
+    print(bcolors.OKGREEN + "Upgrading Orchestrator" + bcolors.ENDC)
+    response = requests.get(f"{ORCHESTRATOR_REPO}/{ORCHESTRATORD_FILE}")
+    with open(os.path.join(HOME_DIR, ORCHESTRATORD_FILE), "wb") as f:
+        f.write(response.content)
+
+    subprocess.run(["sudo cp router-orchestrator "+orchestrator_binary_path], shell=True)
+    subprocess.run(["sudo chmod +x "+orchestrator_binary_path], shell=True)
 
 def setup_orchestrator_service():
     # stop if already running
@@ -988,7 +1018,7 @@ def start():
         elif option == "4":
             install_option=4
             upgrade_orchestrator=True
-            setup_orchestrator()
+            upgrade_orchestrator_binary()
         elif option == "5":
             install_option=5
             print("Upgrading Router")
@@ -1000,7 +1030,8 @@ def start():
 
             install_option=4
             upgrade_orchestrator=True
-            setup_orchestrator()
+            print("Upgrading Orchestrator")
+            upgrade_orchestrator_binary()
         elif option == "7":
             print("Exiting")
             exit(0)
