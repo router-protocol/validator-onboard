@@ -478,7 +478,7 @@ def upgrade_routerd():
                 return
             routerd_home = "/usr/bin/routerd"
 
-        # run_command(["sudo rm -rf " + routerd_home], "Error deleting old routerd binary")
+        run_command(["sudo rm -rf " + routerd_home], "Error deleting old routerd binary")
         run_command(["sudo cp routerd " + routerd_home], "Error moving new routerd binary to current location")
 
         routerd_home = os.path.join(HOME_DIR, ".routerd")
