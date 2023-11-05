@@ -494,24 +494,12 @@ def upgrade_routerd():
         run_command(["cp routerd "+ routerd_home +"/cosmovisor/upgrades/"+routerd_version_name+"/bin"], "Error copying new routerd binary to cosmovisor/upgrade directory")
         run_command(["sudo chmod +x " + routerd_home], "Error setting new routerd binary as executable")
 
-        ORCHESTRATOR_DIR = ".router-orchestrator"
-        ORCHESTRATOR_PATH = os.path.join(HOME_DIR, ORCHESTRATOR_DIR)
-        if os.path.exists(ORCHESTRATOR_PATH):
-            print(f"Upgrading orchestrator")
-            upgrade_orchestrator=True
-            setup_orchestrator()
-
         print(f'{bcolors.OKGREEN}Starting cosmovisor (routerd service){bcolors.ENDC}')
         run_command(["sudo systemctl start cosmovisor.service"], "Error starting cosmovisor.service")
-
         time.sleep(10)
 
         if get_service_status("cosmovisor.service") != ServiceStatus.ACTIVE:
             raise Exception("Error starting cosmovisor")
-        
-        if os.path.exists(ORCHESTRATOR_PATH):
-            print(f'{bcolors.OKGREEN}Restarting orchestrator{bcolors.ENDC}')
-            restart_orchestrator()
 
         print(f'{bcolors.OKGREEN}routerd upgrade completed successfully{bcolors.ENDC}')
         print(f'{bcolors.OKGREEN}To see logs, run the following command: "journalctl -u cosmovisor.service -f"{bcolors.ENDC}')
