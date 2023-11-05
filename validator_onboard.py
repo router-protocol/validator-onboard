@@ -489,6 +489,8 @@ def upgrade_routerd():
 
         print(f'{bcolors.OKGREEN}Upgrading binary{bcolors.ENDC}')
         run_command(["cp routerd "+ routerd_home +"/cosmovisor/current/bin"], "Error copying new routerd binary to cosmovisor/current directory")
+        if not os.path.exists(routerd_home +"/cosmovisor/upgrades/"+routerd_version_name+"/bin"):
+            os.makedirs(routerd_home +"/cosmovisor/upgrades/"+routerd_version_name+"/bin", exist_ok=True)
         run_command(["cp routerd "+ routerd_home +"/cosmovisor/upgrades/"+routerd_version_name+"/bin"], "Error copying new routerd binary to cosmovisor/upgrade directory")
         run_command(["sudo chmod +x " + routerd_home], "Error setting new routerd binary as executable")
 
