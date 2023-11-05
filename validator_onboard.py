@@ -36,7 +36,7 @@ SEED_PEERS="89ec0f07f0ccb61ec19fb8256043cf92e73abd2b@15.206.157.168:26656,50dc3c
 GENESIS_JSON="https://tm.rpc.testnet.routerchain.dev/genesis"
 ROUTERD_FILE = "routerd.tar"
 ORCHESTRATORD_FILE = "router-orchestrator"
-ROUTER_REPO = "https://routerchain-testnet-snapshot.s3.ap-south-1.amazonaws.com/routerd_v1.2-to-v1.2.1/linux/"
+ROUTER_REPO = "https://raw.githubusercontent.com/router-protocol/router-chain-releases/main/linux/"
 ORCHESTRATOR_REPO = "https://raw.githubusercontent.com/router-protocol/router-chain-releases/main/linux/"
 CHAIN_ID="router_9601-1"
 
