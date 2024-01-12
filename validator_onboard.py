@@ -20,9 +20,9 @@ class NetworkVersion(str, Enum):
     TESTNET = "v1.0.0-rc2"
 version = NetworkVersion.TESTNET
 script_version = "v1.0.1"
-routerd_version_name="v1.2.1-to-v1.2.2"
+routerd_version_name="v1.2.4-to-v1.2.5"
 
-snapshot_url="https://routerchain-testnet-snapshot.s3.ap-south-1.amazonaws.com/routerd_snapshot_2481920_20231101122931.tar.lz4"
+snapshot_url="https://routerchain-testnet-snapshot.s3.ap-south-1.amazonaws.com/2024-01-12_router_5681092.tar.lz4"
 class NetworkType(str, Enum):
     MAINNET = "1"
     TESTNET = "2"
@@ -40,8 +40,11 @@ ROUTER_REPO = "https://raw.githubusercontent.com/router-protocol/router-chain-re
 ORCHESTRATOR_REPO = "https://raw.githubusercontent.com/router-protocol/router-chain-releases/main/linux/"
 CHAIN_ID="router_9601-1"
 
+UPGRADE_INFO_JSON='{"name":"v1.2.4-to-v1.2.5","time":"0001-01-01T00:00:00Z","height":5669667}'
+
 ROUTERD_BINARY_v1_2_to_v1_2_1_linux="https://routerchain-testnet-snapshot.s3.ap-south-1.amazonaws.com/routerd_v1.2-to-v1.2.1/linux/routerd"
 ROUTERD_BINARY_v1_2_1_to_v1_2_2_linux="https://raw.githubusercontent.com/router-protocol/router-chain-releases/main/linux/routerd.tar"
+ROUTERD_BINARY_v1_2_4_to_v1_2_5_linux="https://raw.githubusercontent.com/router-protocol/router-chain-releases/main/linux/routerd.tar"
 
 ORCHESTRATOR_TEMPLATE="""
 {
@@ -563,6 +566,14 @@ def cosmovisor_init():
                     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True, env=my_env)
     subprocess.run(["mkdir -p "+routerd_home+"/cosmovisor"],
                        shell=True, env=my_env)
+    
+    subprocess.run(["touch "+routerd_home+"/data/upgrade-info.json"],
+                       shell=True, env=my_env)
+    escaped_JSON = UPGRADE_INFO_JSON.replace('"', '\\"')
+
+    subprocess.run(["echo \"" + escaped_JSON + "\" > " + routerd_home + "/data/upgrade-info.json"], 
+                   shell=True, env=my_env)
+
     subprocess.run(
         ["mkdir -p "+routerd_home+"/cosmovisor/genesis"], shell=True, env=my_env)
     subprocess.run(
@@ -576,7 +587,9 @@ def cosmovisor_init():
     subprocess.run(
         ["mkdir -p "+routerd_home+"/cosmovisor/upgrades/v1.2.1-to-v1.2.2/bin"], shell=True, env=my_env)
     subprocess.run(
-        ["mkdir -p "+routerd_home+"/cosmovisor/current/bin"], shell=True, env=my_env)
+        ["mkdir -p "+routerd_home+"/cosmovisor/upgrades/v1.2.4-to-v1.2.5/bin"], shell=True, env=my_env)
+    # subprocess.run(
+    #     ["mkdir -p "+routerd_home+"/cosmovisor/current"], shell=True, env=my_env)
 
     subprocess.run(
         ["wget -O "+routerd_home+"/cosmovisor/upgrades/v1.2-to-v1.2.1/bin/routerd "+ROUTERD_BINARY_v1_2_to_v1_2_1_linux], 
@@ -585,9 +598,21 @@ def cosmovisor_init():
     subprocess.run(
         ["wget -O "+routerd_home+"/cosmovisor/upgrades/v1.2.1-to-v1.2.2/bin/routerd.tar "+ROUTERD_BINARY_v1_2_1_to_v1_2_2_linux],
         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True, env=my_env)
+    
+    subprocess.run(
+        ["wget -O "+routerd_home+"/cosmovisor/upgrades/v1.2.4-to-v1.2.5/bin/routerd.tar "+ROUTERD_BINARY_v1_2_4_to_v1_2_5_linux],
+        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True, env=my_env)
+
     subprocess.run(
         ["tar -xvf "+routerd_home+"/cosmovisor/upgrades/v1.2.1-to-v1.2.2/bin/routerd.tar -C "+routerd_home+"/cosmovisor/upgrades/v1.2.1-to-v1.2.2/bin"],
         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True, env=my_env)
+    
+    subprocess.run(
+        ["tar -xvf "+routerd_home+"/cosmovisor/upgrades/v1.2.4-to-v1.2.5/bin/routerd.tar -C "+routerd_home+"/cosmovisor/upgrades/v1.2.4-to-v1.2.5/bin"],
+        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True, env=my_env)
+    
+    # subprocess.run(["cp "+routerd_home+"/cosmovisor/upgrades/v1.2.4-to-v1.2.5/bin/routerd "+routerd_home+"/cosmovisor/current/bin"], 
+    #                shell=True, env=my_env)
 
     subprocess.run(["cp /usr/bin/routerd "+routerd_home+"/cosmovisor/upgrades/v1/bin"],
                     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True, env=my_env)
