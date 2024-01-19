@@ -820,7 +820,7 @@ def start():
 ██║░░██║╚█████╔╝╚██████╔╝░░░██║░░░███████╗██║░░██║  ╚█████╔╝██║░░██║██║░░██║██║██║░╚███║
 ╚═╝░░╚═╝░╚════╝░░╚═════╝░░░░╚═╝░░░╚══════╝╚═╝░░╚═╝  ░╚════╝░╚═╝░░╚═╝╚═╝░░╚═╝╚═╝╚═╝░░╚══╝
 
-    ROUTER CHAIN INSTALLER
+    ROUTER CHAIN MAINNET INSTALLER
     Mainnet version: {t}
         """.format(
         t=NetworkVersion.MAINNET.value) + bcolors.ENDC)
