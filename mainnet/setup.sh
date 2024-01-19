@@ -12,7 +12,11 @@ echo "---------------------------------"
 
 GIT_URL="https://bit.ly/47Jd6aX"
 VALIDATOR_ONBOARD_URL="validator_onboard.py"
-
+CONFIG_FILE=$1
+if [ -z "$CONFIG_FILE" ]; then
+    echo "Please provide the path to the config file."
+    exit 1
+fi
 cleanup() {
     echo "clean up"
     rm -- "$0"
@@ -102,4 +106,4 @@ fi
 #     echo "Checksum validation failed. The downloaded file may be corrupted."
 #     exit
 # fi
-python3 "${VALIDATOR_ONBOARD_URL}"
+python3 "${VALIDATOR_ONBOARD_URL} ${CONFIG_FILE}"
