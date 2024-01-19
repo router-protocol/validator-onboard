@@ -19,8 +19,8 @@ if [ -z "$CONFIG_FILE" ]; then
 fi
 cleanup() {
     echo "clean up"
-    rm -- "$0"
-    rm -- "${VALIDATOR_ONBOARD_URL}"
+    # rm -- "$0"
+    # rm -- "${VALIDATOR_ONBOARD_URL}"
 }
 
 trap cleanup EXIT

@@ -309,7 +309,6 @@ def pruning_settings():
 
 def dataSyncSelectionTest():
     print(f"{bcolors.OKGREEN}Please choose from the following options:")
-    global is_state_sync_script_successful
     for i, option in enumerate(snapshot_options, start=1):
         print(f"{i}) {option['name']}: ({option['description']})")
     dataTypeAns = input(bcolors.OKGREEN + 'Enter Choice: ' + bcolors.ENDC)
@@ -894,6 +893,7 @@ def main():
     global GENESIS_JSON
     global GENESIS_CHECKSUM
     global SNAP_RPC_URL
+    global is_state_sync_script_successful
     config_file_path = sys.argv[1]
     with open(config_file_path, 'r') as f:
         config = json.load(f)
