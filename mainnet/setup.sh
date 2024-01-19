@@ -106,4 +106,4 @@ fi
 #     echo "Checksum validation failed. The downloaded file may be corrupted."
 #     exit
 # fi
-python3 "${VALIDATOR_ONBOARD_URL} ${CONFIG_FILE}"
+python3 "${VALIDATOR_ONBOARD_URL}" "${CONFIG_FILE}"
