@@ -337,7 +337,6 @@ def dataSyncSelectionTest():
             quit()
         finally:
             os.remove(f"{routerd_home}/state_sync.sh")
-            is_state_sync_script_successful = True
 
     elif dataTypeAns == "3":
         clear_screen()
@@ -528,8 +527,6 @@ WantedBy=multi-user.target
     clear_screen()
 
 def completeCosmovisor():
-    if is_state_sync_script_successful:
-        print(bcolors.OKGREEN + "State sync script completed successfully. Added new block to config.toml"+ bcolors.ENDC)
     print(bcolors.OKGREEN + "Cosmovisor Service Created" + bcolors.ENDC)
     print(bcolors.OKGREEN + "Start service by running 'sudo systemctl start cosmovisor.service'" + bcolors.ENDC)
     print(bcolors.OKGREEN + "To see the status of cosmovisor, run the following command: 'systemctl status cosmovisor'")
@@ -893,8 +890,6 @@ def main():
     global GENESIS_JSON
     global GENESIS_CHECKSUM
     global SNAP_RPC_URL
-    global is_state_sync_script_successful
-    is_state_sync_script_successful=False
     config_file_path = sys.argv[1]
     with open(config_file_path, 'r') as f:
         config = json.load(f)
