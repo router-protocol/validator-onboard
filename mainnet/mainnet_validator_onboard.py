@@ -894,6 +894,7 @@ def main():
     global GENESIS_CHECKSUM
     global SNAP_RPC_URL
     global is_state_sync_script_successful
+    is_state_sync_script_successful=False
     config_file_path = sys.argv[1]
     with open(config_file_path, 'r') as f:
         config = json.load(f)
