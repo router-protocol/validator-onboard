@@ -309,6 +309,7 @@ def pruning_settings():
 
 def dataSyncSelectionTest():
     print(f"{bcolors.OKGREEN}Please choose from the following options:")
+    global is_state_sync_script_successful
     for i, option in enumerate(snapshot_options, start=1):
         print(f"{i}) {option['name']}: ({option['description']})")
     dataTypeAns = input(bcolors.OKGREEN + 'Enter Choice: ' + bcolors.ENDC)
@@ -316,7 +317,6 @@ def dataSyncSelectionTest():
         clear_screen()
         download_and_extract_snapshot()
     elif dataTypeAns == "2":
-        print(bcolors.OKGREEN + "State sync is not supported yet. Please choose another option" + bcolors.ENDC)
         try:
             state_sync_script = requests.get(state_sync_path)
             state_sync_script.raise_for_status()
@@ -325,24 +325,21 @@ def dataSyncSelectionTest():
             print(f"{bcolors.OKGREEN}Please choose another option" + bcolors.ENDC)
             dataSyncSelectionTest()
             quit()
-    
+        
+        with open(f"{routerd_home}/state_sync.sh", "w") as f:
+            f.write(state_sync_script.text)
+        
         try:
-            subprocess.run(["bash", "-c", state_sync_script.text + " " + SNAP_RPC_URL], check=True)
+            subprocess.run([f"bash {routerd_home}/state_sync.sh " + SNAP_RPC_URL], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True)
         except Exception as e:
             print(f"{bcolors.FAIL}Error running state sync script: {e}" + bcolors.ENDC)
             print(f"{bcolors.OKGREEN}Please choose another option" + bcolors.ENDC)
             dataSyncSelectionTest()
             quit()
+        finally:
+            os.remove(f"{routerd_home}/state_sync.sh")
+            is_state_sync_script_successful = True
 
-        if os.path.isfile(state_sync_path):
-            # run shell script in path state_sync_path
-            subprocess.run(["sh "+state_sync_path], shell=True)
-            
-        else:
-            print(f"{bcolors.OKGREEN}State sync script not found. Please choose another option" + bcolors.ENDC)
-            print(f"Direcotry: {state_sync_path}")
-            # dataSyncSelectionTest()
-            quit()
     elif dataTypeAns == "3":
         clear_screen()
         if ENABLE_GENESIS_SYNC == False:
@@ -532,6 +529,8 @@ WantedBy=multi-user.target
     clear_screen()
 
 def completeCosmovisor():
+    if is_state_sync_script_successful:
+        print(bcolors.OKGREEN + "State sync script completed successfully. Added new block to config.toml"+ bcolors.ENDC)
     print(bcolors.OKGREEN + "Cosmovisor Service Created" + bcolors.ENDC)
     print(bcolors.OKGREEN + "Start service by running 'sudo systemctl start cosmovisor.service'" + bcolors.ENDC)
     print(bcolors.OKGREEN + "To see the status of cosmovisor, run the following command: 'systemctl status cosmovisor'")
