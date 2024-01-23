@@ -337,6 +337,7 @@ def dataSyncSelectionTest():
             quit()
         finally:
             os.remove(f"{routerd_home}/state_sync.sh")
+            is_state_sync_script_successful = True
 
     elif dataTypeAns == "3":
         clear_screen()
@@ -527,6 +528,8 @@ WantedBy=multi-user.target
     clear_screen()
 
 def completeCosmovisor():
+    if is_state_sync_script_successful:
+        print(bcolors.OKGREEN + "State sync script completed successfully. Added new block to config.toml"+ bcolors.ENDC)
     print(bcolors.OKGREEN + "Cosmovisor Service Created" + bcolors.ENDC)
     print(bcolors.OKGREEN + "Start service by running 'sudo systemctl start cosmovisor.service'" + bcolors.ENDC)
     print(bcolors.OKGREEN + "To see the status of cosmovisor, run the following command: 'systemctl status cosmovisor'")
@@ -695,10 +698,16 @@ def install_orchestrator():
         subprocess.run(["sudo rm -rf " + orchestrator_home], shell=True)
 
     print(bcolors.OKGREEN + "Installing Orchestrator" + bcolors.ENDC)
-    response = requests.get(f"{ORCHESTRATOR_REPO}/{ORCHESTRATORD_FILE}")
+    ORCHESTRATOR_URL = ORCHESTRATOR_REPO + ORCHESTRATORD_FILE
+    response = requests.get(ORCHESTRATOR_URL)
     with open(os.path.join(HOME_DIR, ORCHESTRATORD_FILE), "wb") as f:
         f.write(response.content)
-
+    
+    if not os.path.exists(os.path.join(HOME_DIR, ORCHESTRATORD_FILE)):
+        print("Error downloading orchestrator: "+ ORCHESTRATOR_URL)
+        raise Exception("Error downloading orchestrator")
+    
+    subprocess.run(["tar -xvf " + ORCHESTRATORD_FILE + " -C ."], shell=True)
     subprocess.run(["sudo cp router-orchestrator /usr/bin"], shell=True)
     subprocess.run(["sudo chmod +x /usr/bin/router-orchestrator"], shell=True)
     download_and_copy_libs()
@@ -706,7 +715,6 @@ def install_orchestrator():
     setup_orchestrator_service()
 
 def setup_orchestrator_service():
-    # stop if already running
     global ORCHESTRATOR_PATH
     global ORCHESTRATOR_DIR
     print(bcolors.OKGREEN + "Setting up Orchestrator Service" + bcolors.ENDC)
@@ -890,6 +898,8 @@ def main():
     global GENESIS_JSON
     global GENESIS_CHECKSUM
     global SNAP_RPC_URL
+    global is_state_sync_script_successful
+    is_state_sync_script_successful=False
     config_file_path = sys.argv[1]
     with open(config_file_path, 'r') as f:
         config = json.load(f)
