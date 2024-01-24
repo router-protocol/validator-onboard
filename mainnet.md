@@ -49,3 +49,123 @@ curl -L https://bit.ly/48BNjm4 > rv.sh && bash rv.sh config.json
    start: `sudo systemctl restart orchestrator.service`
 
    check logs: `journalctl -u orchestrator -f`
+
+
+### Setup validator account
+
+1. Create validator account
+
+   ```bash
+   export VALIDATOR_NAME="my-validator-name"
+   routerd keys add $VALIDATOR_NAME --chain-id router_9600-1 --keyring-backend file
+   ```
+
+2. Copy routerd address
+
+   ```bash
+   routerd keys show $VALIDATOR_NAME -a --keyring-backend file
+   export VALIDATOR_ADDRESS=<routerd-address>
+   ```
+
+3. Fund routerd address with some $ROUTE tokens and check balance
+
+   ```bash
+   routerd q bank balances $VALIDATOR_ADDRESS --chain-id router_9600-1 --keyring-backend file
+   ```
+
+4. Create validator: Initialize new validator with self delegation of $ROUTE tokens.
+
+   ```bash
+      export VALIDATOR_MONIKER="my-validator-moniker"
+      routerd tx staking create-validator \
+      --amount=100000000000000000000route \
+      --pubkey=$(routerd tendermint show-validator) \
+      --moniker=$(VALIDATOR_MONIKER) \
+      --chain-id=router_9600-1 \
+      --commission-rate="0.10" \
+      --commission-max-rate="0.20" \
+      --commission-max-change-rate="0.01" \
+      --min-self-delegation="1000000" \
+      --gas="auto" \
+      --fees="100000000000000route" \
+      --from=my-validator-key \
+      --gas-adjustment=1.5 \
+      --keyring-backend=file
+   ```
+
+5. Verify validator status
+
+   ```bash
+   routerd q staking validator $VALIDATOR_ADDRESS --chain-id router_9600-1 --keyring-backend file
+   ```
+
+### Setup Orchestrator account
+
+1. Create orchestrator account
+
+   ```bash
+   export ORCHESTRATOR_NAME="my-orchestrator-name"
+   routerd keys add $ORCHESTRATOR_NAME --chain-id router_9600-1 --keyring-backend file
+   ```
+
+   get Orchestrator address
+
+   ```bash
+   routerd keys show $ORCHESTRATOR_NAME -a --keyring-backend file
+   export ORCHESTRATOR_ADDRESS=<routerd-address>
+   ```
+
+2. Get funds to orchestrator account, check balance after getting funds
+
+   ```bash
+   routerd q bank balances $ORCHESTRATOR_ADDRESS --chain-id router_9600-1 --keyring-backend file
+   ```
+
+3. Map orchestrator address to validator address
+
+   ```bash
+   export EVM_ADDRESS_FOR_SIGNING_TXNS=<EVM-ADDRESS-FOR-SIGNING-TXNS>
+   routerd tx attestation set-orchestrator-address $ORCHESTRATOR_ADDRESS $EVM_ADDRESS_FOR_SIGNING_TXNS --from my-validator-key \
+   --chain-id router_9600-1 \
+   --fees 1000000000000000route \
+   --keyring-backend file
+   ```
+
+### Add config.json for Orchestrator
+
+### Start Validator and Orchestrator
+
+1. Start validator
+
+   ```bash
+   sudo systemctl start cosmovisor.service
+   sudo systemctl status cosmovisor.service
+
+   # check logs
+   journalctl -u cosmovisor -f
+   ```
+
+2. Start orchestrator
+
+   ```bash
+   sudo systemctl start orchestrator.service
+   sudo systemctl status orchestrator.service
+
+   # check logs
+   journalctl -u orchestrator -f
+   ```
+
+### Check validator and orchestrator status
+
+1. Check if node is syncing, make sure it is not stuck at some block height
+
+   ```bash
+   routerd status | jq .SyncInfo.latest_block_height
+   ```
+
+2. Check if orchestrator health is ok
+
+   ```bash
+   curl localhost:8001/health
+   ```
+
