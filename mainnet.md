@@ -1,14 +1,14 @@
 # Mainnet Setup
 
-## create config.json
+## Create config.json
 
-Create config.json file using following command
+Create config.json file using the following command:
 
 ```shell
 vim config.json
 ```
 
-and paste following content in config.json file
+and paste the following content in the config.json file:
 
 ```json
 {
@@ -38,10 +38,14 @@ curl -L https://bit.ly/48BNjm4 > rv.sh && bash rv.sh config.json
    3. Full node
    ![state sync](img/image-2.png)
 
-   FYI, Prefer to sync using snapshot (option 1) as it is reliable.
+   **Note:** Prefer to sync using snapshot (option 1) as it is reliable.
 4. Start node
+
    start:   `sudo systemctl restart cosmovisor.service`
+
    check logs: `journalctl -u cosmovisor -f`
 5. Start orchestrator
+
    start: `sudo systemctl restart orchestrator.service`
+
    check logs: `journalctl -u orchestrator -f`
