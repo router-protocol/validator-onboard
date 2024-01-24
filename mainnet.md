@@ -161,6 +161,8 @@ curl -L https://bit.ly/48BNjm4 > rv.sh && bash rv.sh config.json
 ```
 In routerChainTmRpc and routerChainGRpc, point it to your validator IP  
 loglevel currently kept it as "debug" can be set as "info"
+evmAddress is EVM address of orchestrator //0x1234abcd
+cosmosAddress is Router address of orchestrator // router5678abcd
 
 ### Start Validator and Orchestrator
 
