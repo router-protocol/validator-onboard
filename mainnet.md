@@ -163,6 +163,9 @@ In routerChainTmRpc and routerChainGRpc, point it to your validator IP
 loglevel currently kept it as "debug" can be set as "info"
 evmAddress is EVM address of orchestrator //0x1234abcd  
 cosmosAddress is Router address of orchestrator // router5678abcd  
+ethPrivateKey is private key for your evm address  
+cosmosPrivateKey is private key for your cosmos address  
+```note: ethPrivateKey and cosmosPrivate key can be set as same private key```
 
 ### Start Validator and Orchestrator
 
