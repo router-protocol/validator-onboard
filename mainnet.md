@@ -79,7 +79,7 @@ curl -L https://bit.ly/48BNjm4 > rv.sh && bash rv.sh config.json
       export VALIDATOR_MONIKER="my-validator-moniker"
 
       routerd tx staking create-validator \
-      --amount=100000000000000000000route \
+      --amount=1000000000000000000route \
       --pubkey=$(routerd tendermint show-validator) \
       --moniker=$VALIDATOR_MONIKER \
       --chain-id=router_9600-1 \
@@ -136,49 +136,13 @@ curl -L https://bit.ly/48BNjm4 > rv.sh && bash rv.sh config.json
 
 ### Add config.json for Orchestrator
 
-```json
- {
-  "chains": [
-    {
-      "chainId": "137",
-      "chainType": " CHAIN_TYPE_EVM",
-      "chainName": "Mumbai",
-      "chainRpc": "www.polygon-rpc.com",
-      "blocksToSearch": 1000,
-      "blockTime": "5s"
-    }
-  ],
-  "globalConfig": {
-    "logLevel": "debug",
-    "networkType": "mainnet",
-    "dbPath": "orchestrator.db",
-    "batchSize": 25,
-    "batchWaitTime": 4,
-    "routerChainTmRpc": "http://0.0.0.0:26657",
-    "routerChainGRpc": "tcp://0.0.0.0:9090",
-    "evmAddress": "", 
-    "cosmosAddress": "", 
-   "ethPrivateKey": "",
-    "cosmosPrivateKey": ""
-  }
-}
-```
-
-In routerChainTmRpc and routerChainGRpc, point it to your validator IP  
-loglevel currently kept it as "debug" can be set as "info"
-evmAddress is EVM address of orchestrator //0x1234abcd  
-cosmosAddress is Router address of orchestrator // router5678abcd  
-ethPrivateKey is private key for your evm address  
-cosmosPrivateKey is private key for your cosmos address  
-```note: ethPrivateKey and cosmosPrivate key can be set as same private key```
-
    ```json
       {
          "chains": [
             {
                "chainId": "137",
-               "chainType": " CHAIN_TYPE_EVM",
-               "chainName": "Mumbai",
+               "chainType": "CHAIN_TYPE_EVM",
+               "chainName": "Polygon",
                "chainRpc": "www.polygon-rpc.com",
                "blocksToSearch": 1000,
                "blockTime": "5s"
