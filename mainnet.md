@@ -56,14 +56,14 @@ curl -L https://bit.ly/48BNjm4 > rv.sh && bash rv.sh config.json
 1. Create validator account
 
    ```bash
-   export VALIDATOR_NAME="my-validator-name"
-   routerd keys add $VALIDATOR_NAME --chain-id router_9600-1 --keyring-backend file
+   export VALIDATOR_KEY_NAME="my-validator-name"
+   routerd keys add $VALIDATOR_KEY_NAME --chain-id router_9600-1 --keyring-backend file
    ```
 
 2. Copy routerd address
 
    ```bash
-   routerd keys show $VALIDATOR_NAME -a --keyring-backend file
+   routerd keys show $VALIDATOR_KEY_NAME -a --keyring-backend file
    export VALIDATOR_ADDRESS=<routerd-address>
    ```
 
@@ -77,10 +77,11 @@ curl -L https://bit.ly/48BNjm4 > rv.sh && bash rv.sh config.json
 
    ```bash
       export VALIDATOR_MONIKER="my-validator-moniker"
+
       routerd tx staking create-validator \
       --amount=100000000000000000000route \
       --pubkey=$(routerd tendermint show-validator) \
-      --moniker=$(VALIDATOR_MONIKER) \
+      --moniker=$VALIDATOR_MONIKER \
       --chain-id=router_9600-1 \
       --commission-rate="0.10" \
       --commission-max-rate="0.20" \
@@ -88,7 +89,7 @@ curl -L https://bit.ly/48BNjm4 > rv.sh && bash rv.sh config.json
       --min-self-delegation="1000000" \
       --gas="auto" \
       --fees="100000000000000route" \
-      --from=my-validator-key \
+      --from=$VALIDATOR_KEY_NAME \
       --gas-adjustment=1.5 \
       --keyring-backend=file
    ```
@@ -104,14 +105,14 @@ curl -L https://bit.ly/48BNjm4 > rv.sh && bash rv.sh config.json
 1. Create orchestrator account
 
    ```bash
-   export ORCHESTRATOR_NAME="my-orchestrator-name"
-   routerd keys add $ORCHESTRATOR_NAME --chain-id router_9600-1 --keyring-backend file
+   export ORCHESTRATOR_KEY_NAME="my-orchestrator-name"
+   routerd keys add $ORCHESTRATOR_KEY_NAME --chain-id router_9600-1 --keyring-backend file
    ```
 
    get Orchestrator address
 
    ```bash
-   routerd keys show $ORCHESTRATOR_NAME -a --keyring-backend file
+   routerd keys show $ORCHESTRATOR_KEY_NAME -a --keyring-backend file
    export ORCHESTRATOR_ADDRESS=<routerd-address>
    ```
 
@@ -121,7 +122,9 @@ curl -L https://bit.ly/48BNjm4 > rv.sh && bash rv.sh config.json
    routerd q bank balances $ORCHESTRATOR_ADDRESS --chain-id router_9600-1 --keyring-backend file
    ```
 
-3. Map orchestrator address to validator address
+3. Map orchestrator address to validator address.
+
+   `EVM-KEY-FOR-SIGNING-TXNS` is the public ethereum address. You can create one in Metamask, it doesnt need to have funds. We use it to sign transactions on EVM chains. Make sure to save the private key of this address somewhere safe.
 
    ```bash
    export EVM_ADDRESS_FOR_SIGNING_TXNS=<EVM-ADDRESS-FOR-SIGNING-TXNS>
@@ -132,6 +135,7 @@ curl -L https://bit.ly/48BNjm4 > rv.sh && bash rv.sh config.json
    ```
 
 ### Add config.json for Orchestrator
+
 ```json
  {
   "chains": [
@@ -159,6 +163,7 @@ curl -L https://bit.ly/48BNjm4 > rv.sh && bash rv.sh config.json
   }
 }
 ```
+
 In routerChainTmRpc and routerChainGRpc, point it to your validator IP  
 loglevel currently kept it as "debug" can be set as "info"
 evmAddress is EVM address of orchestrator //0x1234abcd  
@@ -166,6 +171,41 @@ cosmosAddress is Router address of orchestrator // router5678abcd
 ethPrivateKey is private key for your evm address  
 cosmosPrivateKey is private key for your cosmos address  
 ```note: ethPrivateKey and cosmosPrivate key can be set as same private key```
+
+   ```json
+      {
+         "chains": [
+            {
+               "chainId": "137",
+               "chainType": " CHAIN_TYPE_EVM",
+               "chainName": "Mumbai",
+               "chainRpc": "www.polygon-rpc.com",
+               "blocksToSearch": 1000,
+               "blockTime": "5s"
+            }
+         ],
+         "globalConfig": {
+            "logLevel": "debug",
+            "networkType": "mainnet",
+            "dbPath": "orchestrator.db",
+            "batchSize": 25,
+            "batchWaitTime": 4,
+            "routerChainTmRpc": "http://0.0.0.0:26657",
+            "routerChainGRpc": "tcp://0.0.0.0:9090",
+            "evmAddress": "",
+            "cosmosAddress": "",
+            "ethPrivateKey": "",
+            "cosmosPrivateKey": ""
+         }
+      }
+   ```
+
+- `routerChainTmRpc` and `routerChainGRpc`, point it to your validator IP
+- `cosmosAddress` is Router address of orchestrator // router5678abcd
+- `cosmosPrivateKey` is private key for your orchestrator cosmos address (private key of above `cosmosAddress`)
+- `evmAddress` is EVM address of orchestrator which created in above step in Metamask //0x1234abcd
+- `ethPrivateKey` is private key for the the above `evmAddress` wallet you created
+- `loglevel` currently kept it as "debug" can be set as "info" evmAddress is EVM address of orchestrator //0x1234abcd
 
 ### Start Validator and Orchestrator
 
@@ -202,4 +242,3 @@ cosmosPrivateKey is private key for your cosmos address
    ```bash
    curl localhost:8001/health
    ```
-
