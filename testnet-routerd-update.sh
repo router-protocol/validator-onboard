@@ -1,5 +1,11 @@
 #!/bin/bash
 
+cleanup() {
+    rm -- "$0"
+}
+
+trap cleanup EXIT
+
 get_distro_id_lsb_release() {
     lsb_release -i | cut -f 2
 }
@@ -12,6 +18,7 @@ if systemctl is-active --quiet cosmovisor.service; then
     echo "cosmovisor.service is running, please stop it and try again"
     exit 1
 fi
+
 
 
 distro_id=""
