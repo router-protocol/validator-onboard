@@ -1,11 +1,5 @@
 #!/bin/bash
 
-cleanup() {
-    rm -- "$0"
-}
-
-trap cleanup EXIT
-
 get_distro_id_lsb_release() {
     lsb_release -i | cut -f 2
 }
