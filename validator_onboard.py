@@ -20,9 +20,9 @@ class NetworkVersion(str, Enum):
     TESTNET = "v1.0.0-rc2"
 version = NetworkVersion.TESTNET
 script_version = "v1.0.1"
-routerd_version_name="v1.2.4-to-v1.2.5"
+routerd_version_name="v1.2.5-to-v1.2.6"
 
-snapshot_url="https://routerchain-testnet-snapshot.s3.ap-south-1.amazonaws.com/2024-01-12_router_5681092.tar.lz4"
+snapshot_url="https://routerchain-testnet-snapshot.s3.ap-south-1.amazonaws.com/routerd_snapshot_10289966_20240327063253.tar.lz4"
 class NetworkType(str, Enum):
     MAINNET = "1"
     TESTNET = "2"
@@ -40,11 +40,11 @@ ROUTER_REPO = "https://raw.githubusercontent.com/router-protocol/router-chain-re
 ORCHESTRATOR_REPO = "https://raw.githubusercontent.com/router-protocol/router-chain-releases/main/linux/"
 CHAIN_ID="router_9601-1"
 
-UPGRADE_INFO_JSON='{"name":"v1.2.4-to-v1.2.5","time":"0001-01-01T00:00:00Z","height":5669667}'
+UPGRADE_INFO_JSON='{"name":"v1.2.5-to-v1.2.6","time":"0001-01-01T00:00:00Z","height":10230796}'
 
 ROUTERD_BINARY_v1_2_to_v1_2_1_linux="https://routerchain-testnet-snapshot.s3.ap-south-1.amazonaws.com/routerd_v1.2-to-v1.2.1/linux/routerd"
 ROUTERD_BINARY_v1_2_1_to_v1_2_2_linux="https://raw.githubusercontent.com/router-protocol/router-chain-releases/main/linux/routerd.tar"
-ROUTERD_BINARY_v1_2_4_to_v1_2_5_linux="https://raw.githubusercontent.com/router-protocol/router-chain-releases/main/linux/routerd.tar"
+ROUTERD_BINARY_v1_2_5_to_v1_2_6_linux="https://raw.githubusercontent.com/router-protocol/router-chain-releases/main/linux/routerd.tar"
 
 ORCHESTRATOR_TEMPLATE="""
 {
@@ -84,7 +84,7 @@ def clear_screen(showTitle=True):
     print("clear screen")
     subprocess.run(["clear"], shell=True)
     if showTitle:
-        print('''Router Chain Installer \n''')
+        print('''Router Chain Testnet Installer \n''')
 
 def colorprint(message):
     print(message)
@@ -104,7 +104,7 @@ class CustomHelpFormatter(argparse.HelpFormatter):
 def fmt(prog): return CustomHelpFormatter(prog, max_help_position=30)
 
 parser = argparse.ArgumentParser(
-    description="Router Installer", formatter_class=fmt)
+    description="Router Testnet Installer", formatter_class=fmt)
 
 parser._optionals.title = 'Optional Arguments'
 if not len(sys.argv) > 1:
@@ -473,16 +473,16 @@ def upgrade_routerd():
         run_command(["tar -xvf routerd.tar -C ."], "Error extracting routerd.tar")
         run_command(["sudo chmod +x routerd"], "Error setting routerd as executable")
 
-        routerd_home = run_command(["which routerd"], "Error finding routerd binary location")
+        routerd_binary = run_command(["which routerd"], "Error finding routerd binary location")
 
-        if routerd_home == "":
+        if routerd_binary == "":
             if not user_confirm("routerd is not installed in default location. Do you want to install in default location?"):
                 print(f'{bcolors.OKGREEN}Exiting{bcolors.ENDC}')
                 return
-            routerd_home = "/usr/bin/routerd"
+            routerd_binary = "/usr/bin/routerd"
 
-        run_command(["sudo rm -rf " + routerd_home], "Error deleting old routerd binary")
-        run_command(["sudo cp routerd " + routerd_home], "Error moving new routerd binary to current location")
+        run_command(["sudo rm -rf " + routerd_binary], "Error deleting old routerd binary")
+        run_command(["sudo cp routerd " + routerd_binary], "Error moving new routerd binary to current location")
 
         routerd_home = os.path.join(HOME_DIR, ".routerd")
         if not os.path.exists(routerd_home):
@@ -490,12 +490,21 @@ def upgrade_routerd():
             if not os.path.exists(routerd_home):
                 raise Exception("Invalid routerd home directory")
 
+# mkdir -p ~/.routerd/cosmovisor/upgrades/v1.2.5-to-v1.2.6/bin and ~/.routerd/cosmovisor/current/bin
+        subprocess.run(
+            ["mkdir -p "+routerd_home+"/cosmovisor/genesis/bin"], shell=True, env=my_env)
+        subprocess.run(
+            ["mkdir -p "+routerd_home+"/cosmovisor/current/bin"], shell=True, env=my_env)
+
+        subprocess.run(
+            ["mkdir -p "+routerd_home+"/cosmovisor/upgrades/"+routerd_version_name+"/bin"], shell=True, env=my_env)
+
         print(f'{bcolors.OKGREEN}Upgrading binary{bcolors.ENDC}')
-        run_command(["cp routerd "+ routerd_home +"/cosmovisor/current/bin"], "Error copying new routerd binary to cosmovisor/current directory")
+        # run_command(["cp routerd "+ routerd_home +"/cosmovisor/current/bin"], "Error copying new routerd binary to cosmovisor/current directory")
         if not os.path.exists(routerd_home +"/cosmovisor/upgrades/"+routerd_version_name+"/bin"):
             os.makedirs(routerd_home +"/cosmovisor/upgrades/"+routerd_version_name+"/bin", exist_ok=True)
-        run_command(["cp routerd "+ routerd_home +"/cosmovisor/upgrades/"+routerd_version_name+"/bin"], "Error copying new routerd binary to cosmovisor/upgrade directory")
-        run_command(["sudo chmod +x " + routerd_home], "Error setting new routerd binary as executable")
+        run_command(["sudo chmod +x " + routerd_binary], "Error setting new routerd binary as executable")
+        run_command(["cp " +routerd_binary+" "+ routerd_home +"/cosmovisor/upgrades/"+routerd_version_name+"/bin"], "Error copying new routerd binary to cosmovisor/upgrade directory")
 
         print(f'{bcolors.OKGREEN}Starting cosmovisor (routerd service){bcolors.ENDC}')
         run_command(["sudo systemctl start cosmovisor.service"], "Error starting cosmovisor.service")
@@ -581,38 +590,16 @@ def cosmovisor_init():
     subprocess.run(
         ["mkdir -p "+routerd_home+"/cosmovisor/upgrades"], shell=True, env=my_env)
     subprocess.run(
-        ["mkdir -p "+routerd_home+"/cosmovisor/upgrades/v1/bin"], shell=True, env=my_env)
-    subprocess.run(
-        ["mkdir -p "+routerd_home+"/cosmovisor/upgrades/v1.2-to-v1.2.1/bin"], shell=True, env=my_env)
-    subprocess.run(
-        ["mkdir -p "+routerd_home+"/cosmovisor/upgrades/v1.2.1-to-v1.2.2/bin"], shell=True, env=my_env)
-    subprocess.run(
-        ["mkdir -p "+routerd_home+"/cosmovisor/upgrades/v1.2.4-to-v1.2.5/bin"], shell=True, env=my_env)
+        ["mkdir -p "+routerd_home+"/cosmovisor/upgrades/"+routerd_version_name+"/bin"], shell=True, env=my_env)
     # subprocess.run(
     #     ["mkdir -p "+routerd_home+"/cosmovisor/current"], shell=True, env=my_env)
 
-    subprocess.run(
-        ["wget -O "+routerd_home+"/cosmovisor/upgrades/v1.2-to-v1.2.1/bin/routerd "+ROUTERD_BINARY_v1_2_to_v1_2_1_linux], 
-        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True, env=my_env)
-
-    subprocess.run(
-        ["wget -O "+routerd_home+"/cosmovisor/upgrades/v1.2.1-to-v1.2.2/bin/routerd.tar "+ROUTERD_BINARY_v1_2_1_to_v1_2_2_linux],
-        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True, env=my_env)
+    # subprocess.run(
+    #     ["tar -xvf "+routerd_home+"/cosmovisor/upgrades/"+routerd_version_name+"/bin/routerd.tar -C "+routerd_home+"/cosmovisor/upgrades/v1.2.4-to-v1.2.5/bin"],
+    #     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True, env=my_env)
     
-    subprocess.run(
-        ["wget -O "+routerd_home+"/cosmovisor/upgrades/v1.2.4-to-v1.2.5/bin/routerd.tar "+ROUTERD_BINARY_v1_2_4_to_v1_2_5_linux],
-        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True, env=my_env)
-
-    subprocess.run(
-        ["tar -xvf "+routerd_home+"/cosmovisor/upgrades/v1.2.1-to-v1.2.2/bin/routerd.tar -C "+routerd_home+"/cosmovisor/upgrades/v1.2.1-to-v1.2.2/bin"],
-        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True, env=my_env)
-    
-    subprocess.run(
-        ["tar -xvf "+routerd_home+"/cosmovisor/upgrades/v1.2.4-to-v1.2.5/bin/routerd.tar -C "+routerd_home+"/cosmovisor/upgrades/v1.2.4-to-v1.2.5/bin"],
-        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True, env=my_env)
-    
-    # subprocess.run(["cp "+routerd_home+"/cosmovisor/upgrades/v1.2.4-to-v1.2.5/bin/routerd "+routerd_home+"/cosmovisor/current/bin"], 
-    #                shell=True, env=my_env)
+    subprocess.run(["cp /usr/bin/routerd "+routerd_home+"/cosmovisor/upgrades/"+routerd_version_name+"/bin"],
+                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True, env=my_env)
 
     subprocess.run(["cp /usr/bin/routerd "+routerd_home+"/cosmovisor/upgrades/v1/bin"],
                     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True, env=my_env)
@@ -985,7 +972,7 @@ def start():
 ██║░░██║╚█████╔╝╚██████╔╝░░░██║░░░███████╗██║░░██║  ╚█████╔╝██║░░██║██║░░██║██║██║░╚███║
 ╚═╝░░╚═╝░╚════╝░░╚═════╝░░░░╚═╝░░░╚══════╝╚═╝░░╚═╝  ░╚════╝░╚═╝░░╚═╝╚═╝░░╚═╝╚═╝╚═╝░░╚══╝
 
-    ROUTER CHAIN INSTALLER
+    ROUTER CHAIN TESTNET INSTALLER
     Testnet version: {t}
         """.format(
         t=NetworkVersion.TESTNET.value) + bcolors.ENDC)
