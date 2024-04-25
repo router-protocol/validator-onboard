@@ -22,7 +22,7 @@ version = NetworkVersion.TESTNET
 script_version = "v1.0.1"
 routerd_version_name="v1.2.5-to-v1.2.6"
 
-snapshot_url="https://routerchain-testnet-snapshot.s3.ap-south-1.amazonaws.com/routerd_snapshot_11457576_20240416064247.tar.lz4"
+snapshot_url="https://routerchain-testnet-snapshot.s3.ap-south-1.amazonaws.com/routerd_snapshot_11949308_20240425094725.tar.lz4"
 class NetworkType(str, Enum):
     MAINNET = "1"
     TESTNET = "2"
