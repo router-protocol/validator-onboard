@@ -371,8 +371,12 @@ def download_and_extract_snapshot():
 
     colorprint("Downloading Snapshot from " + snapshot_url + " ")
     os.chdir(os.path.expanduser(routerd_home))
-    subprocess.run(["wget -O - "+snapshot_url +
+    if snapshot_url.startswith("http"):
+        subprocess.run(["wget -O - "+snapshot_url +
                    " | lz4 -d | tar -xvf -"], shell=True, env=my_env)
+    else:
+        subprocess.run(["lz4 -d "+snapshot_url + " | tar -xvf -"], shell=True, env=my_env)
+    
 
 def complete():
     print(bcolors.OKGREEN +
