@@ -372,9 +372,11 @@ def download_and_extract_snapshot():
     colorprint("Downloading Snapshot from " + snapshot_url + " ")
     os.chdir(os.path.expanduser(routerd_home))
     if snapshot_url.startswith("http"):
+        colorprint("Downloading snapshot from " + snapshot_url)
         subprocess.run(["wget -O - "+snapshot_url +
                    " | lz4 -d | tar -xvf -"], shell=True, env=my_env)
     else:
+        colorprint("Extracting snapshot from " + snapshot_url)
         subprocess.run(["lz4 -d "+snapshot_url + " | tar -xvf -"], shell=True, env=my_env)
     
 
@@ -599,7 +601,7 @@ def init_setup():
         colorprint("(3/4) Installing Go")
         subprocess.run(["wget -q -O - https://git.io/vQhTU | bash -s -- --remove"],
         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True)
-        subprocess.run(["wget -q -O - https://git.io/vQhTU | bash -s -- --version 1.20"],
+        subprocess.run(["wget -q -O - https://git.io/vQhTU | bash -s -- --version 1.21.0"],
         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True)
         os.chdir(os.path.expanduser(HOME_DIR))
         print(bcolors.OKGREEN + "(4/4) Installing Router {v} Binary".format(v=version) + bcolors.ENDC)
