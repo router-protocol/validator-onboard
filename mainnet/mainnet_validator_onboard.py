@@ -30,7 +30,7 @@ class ServiceStatus(str, Enum):
     INACTIVE = "inactive"
     FAILED = "failed"
 
-UPGRADE_INFO_JSON=''
+UPGRADE_INFO_JSON='{"name":"2.0.0-nitro-to-2.1.1","time":"0001-01-01T00:00:00Z","height":7673000}'
 ROUTERD_FILE = "routerd.tar.gz"
 ORCHESTRATORD_FILE = "router-orchestrator.tar.gz"
 CHAIN_ID="router_9600-1"
@@ -461,7 +461,7 @@ def cosmovisor_init():
     os.chdir(os.path.expanduser(HOME))
 
     colorprint("Setting Up Cosmovisor")
-    subprocess.run(["go install github.com/cosmos/cosmos-sdk/cosmovisor/cmd/cosmovisor@latest"],
+    subprocess.run(["go install cosmossdk.io/tools/cosmovisor/cmd/cosmovisor@v1.5.0"],
                     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True, env=my_env)
     subprocess.run(["mkdir -p "+routerd_home+"/cosmovisor"],
                        shell=True, env=my_env)
@@ -484,6 +484,25 @@ def cosmovisor_init():
     
     subprocess.run(["cp /usr/bin/routerd "+routerd_home +
                     "/cosmovisor/genesis/bin"], shell=True, env=my_env)
+
+    os.environ["DAEMON_NAME"] = "routerd"
+    os.environ["DAEMON_HOME"] = routerd_home
+    os.environ["DAEMON_ALLOW_DOWNLOAD_BINARIES"] = "true"
+    os.environ["DAEMON_LOG_BUFFER_SIZE"] = "512"
+    os.environ["DAEMON_RESTART_AFTER_UPGRADE"] = "true"
+    os.environ["UNSAFE_SKIP_BACKUP"] = "true"
+    routerd_nitro_upgrade_cmds=[
+        "wget https://raw.githubusercontent.com/router-protocol/router-chain-binary-release/v2.1.1/linux/routerd.tar.gz",
+        "tar -xvf routerd.tar.gz -C .",
+        "cosmovisor add-upgrade 2.0.0-nitro-to-2.1.1 routerd --upgrade-height 7673000"
+    ]
+    for command in routerd_nitro_upgrade_cmds:
+        try:
+            process = subprocess.run(command, shell=True, check=True, env=os.environ)
+        except subprocess.CalledProcessError as e:
+            print(f"Error upgrade running command: {command}")
+            print(f"Error: {e}")
+
     cosmovisor_service()
     clear_screen()
     completeCosmovisor()
