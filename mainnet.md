@@ -57,7 +57,7 @@ curl -L https://bit.ly/48BNjm4 > rv.sh && bash rv.sh config.json
 
    ```bash
    export VALIDATOR_KEY_NAME="my-validator-name"
-   routerd keys add $VALIDATOR_KEY_NAME --chain-id router_9600-1 --keyring-backend file
+   routerd keys add $VALIDATOR_KEY_NAME --keyring-backend file
    ```
 
 2. Copy routerd address
@@ -70,7 +70,7 @@ curl -L https://bit.ly/48BNjm4 > rv.sh && bash rv.sh config.json
 3. Fund routerd address with some $ROUTE tokens and check balance
 
    ```bash
-   routerd q bank balances $VALIDATOR_ADDRESS --chain-id router_9600-1 --keyring-backend file
+   routerd q bank balances $VALIDATOR_ADDRESS
    ```
 
 4. Create validator: Initialize new validator with self delegation of $ROUTE tokens.
