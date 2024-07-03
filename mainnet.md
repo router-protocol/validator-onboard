@@ -198,7 +198,7 @@ curl -L https://bit.ly/48BNjm4 > rv.sh && bash rv.sh config.json
 1. Check if node is syncing, make sure it is not stuck at some block height
 
    ```bash
-   routerd status | jq .SyncInfo.latest_block_height
+   routerd status 2>&1 | jq .SyncInfo
    ```
 
 2. Check if orchestrator health is ok
