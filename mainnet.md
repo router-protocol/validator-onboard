@@ -5,7 +5,7 @@
 Create config.json file using the following command:
 
 ```shell
-vim config.json
+nano config.json
 ```
 
 and paste the following content in the config.json file:
