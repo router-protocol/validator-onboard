@@ -137,13 +137,14 @@ curl -L https://bit.ly/48BNjm4 > rv.sh && bash rv.sh config.json
    ```
 
 3. **Map Orchestrator to Validator**:
-   ```
-   export EVM_ADDRESS_FOR_SIGNING_TXNS=<EVM-ADDRESS-FOR-SIGNING-TXNS>
-   echo "export EVM_ADDRESS_FOR_SIGNING_TXNS=$EVM_ADDRESS_FOR_SIGNING_TXNS" >> ~/.bashrc
-   source ~/.bashrc
-    ```
-    ```
-    routerd tx attestation set-orchestrator-address <orchestrator-address> <eth-address-for-signing-txns> --from <validator-key-name> --chain-id router_9600-1 --fees         1000000000000000route -y
+```
+export EVM_ADDRESS_FOR_SIGNING_TXNS=<EVM-ADDRESS-FOR-SIGNING-TXNS>
+echo "export EVM_ADDRESS_FOR_SIGNING_TXNS=$EVM_ADDRESS_FOR_SIGNING_TXNS" >> ~/.bashrc
+source ~/.bashrc
+```
+
+```
+routerd tx attestation set-orchestrator-address <orchestrator-address> <eth-address-for-signing-txns> --from <validator-key-name> --chain-id router_9600-1 --fees         1000000000000000route -y
 ```
 
 ## Step 5: Add Configuration for Orchestrator
