@@ -57,14 +57,15 @@ curl -L https://bit.ly/48BNjm4 > rv.sh && bash rv.sh config.json
 
    ```bash
    export VALIDATOR_KEY_NAME="my-validator-name"
-   routerd keys add $VALIDATOR_KEY_NAME --keyring-backend file
+   routerd keys add $VALIDATOR_KEY_NAME
    ```
 
 2. Copy routerd address
 
    ```bash
-   routerd keys show $VALIDATOR_KEY_NAME -a --keyring-backend file
+   routerd keys show $VALIDATOR_KEY_NAME
    export VALIDATOR_ADDRESS=<routerd-address>
+   source ~/.bashrc
    ```
 
 3. Fund routerd address with some $ROUTE tokens and check balance
@@ -97,7 +98,7 @@ curl -L https://bit.ly/48BNjm4 > rv.sh && bash rv.sh config.json
 5. Verify validator status
 
    ```bash
-   routerd q staking validator $VALIDATOR_ADDRESS --chain-id router_9600-1 --keyring-backend file
+   routerd q staking validator $VALIDATOR_ADDRESS
    ```
 
 ### Setup Orchestrator account
@@ -106,20 +107,20 @@ curl -L https://bit.ly/48BNjm4 > rv.sh && bash rv.sh config.json
 
    ```bash
    export ORCHESTRATOR_KEY_NAME="my-orchestrator-name"
-   routerd keys add $ORCHESTRATOR_KEY_NAME --chain-id router_9600-1 --keyring-backend file
+   routerd keys add $ORCHESTRATOR_KEY_NAME
    ```
 
    get Orchestrator address
 
    ```bash
-   routerd keys show $ORCHESTRATOR_KEY_NAME -a --keyring-backend file
+   routerd keys show $ORCHESTRATOR_KEY_NAME
    export ORCHESTRATOR_ADDRESS=<routerd-address>
    ```
 
 2. Get funds to orchestrator account, check balance after getting funds
 
    ```bash
-   routerd q bank balances $ORCHESTRATOR_ADDRESS --chain-id router_9600-1 --keyring-backend file
+   routerd q bank balances $ORCHESTRATOR_ADDRESS
    ```
 
 3. Map orchestrator address to validator address.
@@ -128,13 +129,16 @@ curl -L https://bit.ly/48BNjm4 > rv.sh && bash rv.sh config.json
 
    ```bash
    export EVM_ADDRESS_FOR_SIGNING_TXNS=<EVM-ADDRESS-FOR-SIGNING-TXNS>
-   routerd tx attestation set-orchestrator-address $ORCHESTRATOR_ADDRESS $EVM_ADDRESS_FOR_SIGNING_TXNS --from my-validator-key \
+   routerd tx attestation set-orchestrator-address $ORCHESTRATOR_ADDRESS $EVM_ADDRESS_FOR_SIGNING_TXNS --from $VALIDATOR_KEY_NAME \
    --chain-id router_9600-1 \
    --fees 1000000000000000route \
-   --keyring-backend file
    ```
 
 ### Add config.json for Orchestrator
+```bash
+cd .router-orchestrator
+nano config.json
+```
 
    ```json
       {
