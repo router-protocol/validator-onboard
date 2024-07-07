@@ -152,7 +152,6 @@ curl -L https://bit.ly/48BNjm4 > rv.sh && bash rv.sh config.json
 Create a configuration file for the orchestrator:
 
 ```bash
-mkdir -p ~/.router-orchestrator
 cd ~/.router-orchestrator
 nano config.json
 ```
