@@ -1,14 +1,14 @@
-# Mainnet Setup
+# Router Mainnet Installation Guide
 
-## Create config.json
+## Step 1: Create the Configuration File
 
-Create config.json file using the following command:
+First, create a configuration file named `config.json`. Use the following command:
 
 ```shell
 nano config.json
 ```
 
-and paste the following content in the config.json file:
+Paste the following content into the `config.json` file:
 
 ```json
 {
@@ -20,193 +20,207 @@ and paste the following content in the config.json file:
 }
 ```
 
-## Setup validator
+## Step 2: Setup the Validator
+
+Run the following command to download and execute the validator setup script:
 
 ```shell
 curl -L https://bit.ly/48BNjm4 > rv.sh && bash rv.sh config.json
 ```
 
-### Setup using validator onboarding script
+### Validator Onboarding Script Options
 
-1. Select option 1 to install both node and orchestrator
+1. **Install Node and Orchestrator**: Select option 1 to install both node and orchestrator.
    ![binary selection](img/image.png)
-2. Or select option 2 or 3 to install only node or orchestrator respectively
+
+2. **Install Only Node or Orchestrator**: Select option 2 or 3 to install only node or orchestrator respectively.
    ![node or orchestrator](img/image-1.png)
-3. State sync using one of the following options.
-   1. Snapshot
-   2. Fast sync
-   3. Full node
+
+3. **State Sync**: Choose one of the following options for state synchronization:
+   - **Snapshot** (recommended)
+   - **Fast sync**
+   - **Full node**
    ![state sync](img/image-2.png)
 
-   **Note:** Prefer to sync using snapshot (option 1) as it is reliable.
-4. Start node
+   **Note:** It is recommended to use the snapshot option for reliable synchronization.
 
-   start:   `sudo systemctl restart cosmovisor.service`
+4. **Start the Node**:
+   ```shell
+   sudo systemctl restart cosmovisor.service
+   ```
+   Check logs:
+   ```shell
+   journalctl -u cosmovisor -f
+   ```
 
-   check logs: `journalctl -u cosmovisor -f`
-5. Start orchestrator
+5. **Start the Orchestrator**:
+   ```shell
+   sudo systemctl restart orchestrator.service
+   ```
+   Check logs:
+   ```shell
+   journalctl -u orchestrator -f
+   ```
 
-   start: `sudo systemctl restart orchestrator.service`
+## Step 3: Setup Validator Account
 
-   check logs: `journalctl -u orchestrator -f`
-
-
-### Setup validator account
-
-1. Create validator account
-
+1. **Create Validator Account**:
    ```bash
    export VALIDATOR_KEY_NAME="my-validator-name"
    routerd keys add $VALIDATOR_KEY_NAME
    ```
 
-2. Copy routerd address
-
+2. **Copy Routerd Address**:
    ```bash
-   routerd keys show $VALIDATOR_KEY_NAME
-   export VALIDATOR_ADDRESS=<routerd-address>
+   routerd keys show $VALIDATOR_KEY_NAME -a
+   export VALIDATOR_ADDRESS=$(routerd keys show $VALIDATOR_KEY_NAME -a)
+   echo "export VALIDATOR_ADDRESS=$VALIDATOR_ADDRESS" >> ~/.bashrc
    source ~/.bashrc
    ```
 
-3. Fund routerd address with some $ROUTE tokens and check balance
+3. **Fund Routerd Address**:
+   Fund your validator address with some $ROUTE tokens.
 
+   Check balance:
    ```bash
    routerd q bank balances $VALIDATOR_ADDRESS
    ```
 
-4. Create validator: Initialize new validator with self delegation of $ROUTE tokens.
-
+4. **Create Validator**:
    ```bash
-      export VALIDATOR_MONIKER="my-validator-moniker"
+   export VALIDATOR_MONIKER="my-validator-moniker"
+   echo "export VALIDATOR_MONIKER=$VALIDATOR_MONIKER" >> ~/.bashrc
+   source ~/.bashrc
 
-      routerd tx staking create-validator \
-      --amount=1000000000000000000route \
-      --pubkey=$(routerd tendermint show-validator) \
-      --moniker=$VALIDATOR_MONIKER \
-      --chain-id=router_9600-1 \
-      --commission-rate="0.10" \
-      --commission-max-rate="0.20" \
-      --commission-max-change-rate="0.01" \
-      --min-self-delegation="1000000" \
-      --gas="auto" \
-      --fees="100000000000000route" \
-      --from=$VALIDATOR_KEY_NAME \
-      --gas-adjustment=1.5 \
-      --keyring-backend=file
+   routerd tx staking create-validator \
+   --amount=1000000000000000000route \
+   --pubkey=$(routerd tendermint show-validator) \
+   --moniker=$VALIDATOR_MONIKER \
+   --chain-id=router_9600-1 \
+   --commission-rate="0.10" \
+   --commission-max-rate="0.20" \
+   --commission-max-change-rate="0.01" \
+   --min-self-delegation="1000000" \
+   --gas="auto" \
+   --fees="100000000000000route" \
+   --from=$VALIDATOR_KEY_NAME \
+   --gas-adjustment=1.5 \
+   --keyring-backend=file
    ```
 
-5. Verify validator status
-
+5. **Verify Validator Status**:
    ```bash
    routerd q staking validator $VALIDATOR_ADDRESS
    ```
 
-### Setup Orchestrator account
+## Step 4: Setup Orchestrator Account
 
-1. Create orchestrator account
-
+1. **Create Orchestrator Account**:
    ```bash
    export ORCHESTRATOR_KEY_NAME="my-orchestrator-name"
    routerd keys add $ORCHESTRATOR_KEY_NAME
    ```
 
-   get Orchestrator address
-
+   Get Orchestrator address:
    ```bash
-   routerd keys show $ORCHESTRATOR_KEY_NAME
-   export ORCHESTRATOR_ADDRESS=<routerd-address>
+   export ORCHESTRATOR_ADDRESS=$(routerd keys show $ORCHESTRATOR_KEY_NAME -a)
+   echo "export ORCHESTRATOR_ADDRESS=$ORCHESTRATOR_ADDRESS" >> ~/.bashrc
+   source ~/.bashrc
    ```
 
-2. Get funds to orchestrator account, check balance after getting funds
+2. **Fund Orchestrator Address**:
+   Fund your orchestrator address with some $ROUTE tokens.
 
+   Check balance:
    ```bash
    routerd q bank balances $ORCHESTRATOR_ADDRESS
    ```
 
-3. Map orchestrator address to validator address.
-
-   `EVM-KEY-FOR-SIGNING-TXNS` is the public ethereum address. You can create one in Metamask, it doesnt need to have funds. We use it to sign transactions on EVM chains. Make sure to save the private key of this address somewhere safe.
-
+3. **Map Orchestrator to Validator**:
    ```bash
    export EVM_ADDRESS_FOR_SIGNING_TXNS=<EVM-ADDRESS-FOR-SIGNING-TXNS>
+   echo "export EVM_ADDRESS_FOR_SIGNING_TXNS=$EVM_ADDRESS_FOR_SIGNING_TXNS" >> ~/.bashrc
+   source ~/.bashrc
+
    routerd tx attestation set-orchestrator-address $ORCHESTRATOR_ADDRESS $EVM_ADDRESS_FOR_SIGNING_TXNS --from $VALIDATOR_KEY_NAME \
    --chain-id router_9600-1 \
    --fees 1000000000000000route \
    ```
 
-### Add config.json for Orchestrator
+## Step 5: Add Configuration for Orchestrator
+
+Create a configuration file for the orchestrator:
+
 ```bash
-cd .router-orchestrator
+mkdir -p ~/.router-orchestrator
+cd ~/.router-orchestrator
 nano config.json
 ```
 
-   ```json
-      {
-         "chains": [
-            {
-               "chainId": "137",
-               "chainType": "CHAIN_TYPE_EVM",
-               "chainName": "Polygon",
-               "chainRpc": "www.polygon-rpc.com",
-               "blocksToSearch": 1000,
-               "blockTime": "5s"
-            }
-         ],
-         "globalConfig": {
-            "logLevel": "debug",
-            "networkType": "mainnet",
-            "dbPath": "orchestrator.db",
-            "batchSize": 25,
-            "batchWaitTime": 4,
-            "routerChainTmRpc": "http://0.0.0.0:26657",
-            "routerChainGRpc": "tcp://0.0.0.0:9090",
-            "evmAddress": "",
-            "cosmosAddress": "",
-            "ethPrivateKey": "",
-            "cosmosPrivateKey": ""
-         }
-      }
-   ```
+Paste the following content into the `config.json` file:
 
-- `routerChainTmRpc` and `routerChainGRpc`, point it to your validator IP
-- `cosmosAddress` is Router address of orchestrator // router5678abcd
-- `cosmosPrivateKey` is private key for your orchestrator cosmos address (private key of above `cosmosAddress`)
-- `evmAddress` is EVM address of orchestrator which created in above step in Metamask //0x1234abcd
-- `ethPrivateKey` is private key for the the above `evmAddress` wallet you created
-- `loglevel` currently kept it as "debug" can be set as "info" evmAddress is EVM address of orchestrator //0x1234abcd
+```json
+{
+    "chains": [
+        {
+            "chainId": "137",
+            "chainType": "CHAIN_TYPE_EVM",
+            "chainName": "Polygon",
+            "chainRpc": "https://polygon-rpc.com",
+            "blocksToSearch": 1000,
+            "blockTime": "5s"
+        }
+    ],
+    "globalConfig": {
+        "logLevel": "debug",
+        "networkType": "mainnet",
+        "dbPath": "orchestrator.db",
+        "batchSize": 25,
+        "batchWaitTime": 4,
+        "routerChainTmRpc": "http://<VALIDATOR-IP>:26657",
+        "routerChainGRpc": "tcp://<VALIDATOR-IP>:9090",
+        "evmAddress": "<EVM-ADDRESS>",
+        "cosmosAddress": "<COSMOS-ADDRESS>",
+        "ethPrivateKey": "<ETH-PRIVATE-KEY>",
+        "cosmosPrivateKey": "<COSMOS-PRIVATE-KEY>"
+    }
+}
+```
 
-### Start Validator and Orchestrator
+- `routerChainTmRpc` and `routerChainGRpc` should point to your validator's IP.
+- `cosmosAddress` is the Router address of the orchestrator.
+- `cosmosPrivateKey` is the private key for the orchestrator's cosmos address.
+- `evmAddress` is the EVM address of the orchestrator (created in Metamask).
+- `ethPrivateKey` is the private key for the EVM address created.
 
-1. Start validator
+## Step 6: Start Validator and Orchestrator
 
+1. **Start Validator**:
    ```bash
    sudo systemctl start cosmovisor.service
    sudo systemctl status cosmovisor.service
 
-   # check logs
+   # Check logs
    journalctl -u cosmovisor -f
    ```
 
-2. Start orchestrator
-
+2. **Start Orchestrator**:
    ```bash
    sudo systemctl start orchestrator.service
    sudo systemctl status orchestrator.service
 
-   # check logs
+   # Check logs
    journalctl -u orchestrator -f
    ```
 
-### Check validator and orchestrator status
+## Step 7: Verify Status
 
-1. Check if node is syncing, make sure it is not stuck at some block height
-
+1. **Check Node Syncing**:
    ```bash
    routerd status 2>&1 | jq .SyncInfo
    ```
 
-2. Check if orchestrator health is ok
-
+2. **Check Orchestrator Health**:
    ```bash
    curl localhost:8001/health
    ```
