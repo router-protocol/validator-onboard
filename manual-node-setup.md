@@ -17,8 +17,14 @@ cp libwasmvm.x86_64.so /lib64
 
 ## Download Binary: 
 ```bash
+# For Ubuntu > 20.04 & Linux
 wget https://raw.githubusercontent.com/router-protocol/router-chain-binary-release/v2.1.6/linux/routerd.tar.gz
+
+# For Debian
+# wget https://raw.githubusercontent.com/router-protocol/router-chain-binary-release/v2.1.6/debian/routerd.tar.gz
+
 tar -xvf routerd.tar.gz -C .
+
 chmod +x /usr/bin/routerd
 cp routerd /usr/bin
 
