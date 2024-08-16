@@ -228,7 +228,8 @@ fi
 
 if dpkg -s sysstat &>/dev/null; then
     echo -e "\nSystem CPU, Memory, Disk usage"
-
+    # set the S_TIME_FORMAT variable to ensure the date format match YYYY-MM-DD
+    export S_TIME_FORMAT=ISO
     cpu_usage=$(mpstat | awk '$12 ~ /[0-9.]+/ { print 100 - $12 }')
     mem_usage=$(free -m | awk 'NR==2{printf "%.2f", $3*100/$2 }')
     disk_usage=$(df -h | awk '$NF=="/"{printf "%s", $5}' | tr -d %)
