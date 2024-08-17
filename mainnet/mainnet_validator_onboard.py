@@ -494,7 +494,11 @@ def cosmovisor_init():
     routerd_nitro_upgrade_cmds=[
         "wget https://raw.githubusercontent.com/router-protocol/router-chain-binary-release/v2.1.1/linux/routerd.tar.gz",
         "tar -xvf routerd.tar.gz -C .",
-        "cosmovisor add-upgrade 2.0.0-nitro-to-2.1.1 routerd --upgrade-height 7673000"
+        "cosmovisor add-upgrade 2.0.0-nitro-to-2.1.1 routerd --upgrade-height 7673000",
+        "rm routerd.tar.gz routerd",
+        "wget https://raw.githubusercontent.com/router-protocol/router-chain-binary-release/v2.1.6/linux/routerd.tar.gz",
+        "tar -xvf routerd.tar.gz -C .",
+        "cosmovisor add-upgrade 2.1.1-to-2.1.6 routerd --upgrade-height 8649000",
     ]
     for command in routerd_nitro_upgrade_cmds:
         try:
