@@ -15,9 +15,7 @@ Download and extract the Orchestrator binary:
 
 ```shell
 cd $HOME
-wget -O router-orchestrator.tar.gz https://github.com/router-protocol/router-orchestrator-binary-release/raw/main/linux/router-orchestrator.tar.gz
-tar -C $HOME/go/bin -xzf router-orchestrator.tar.gz
-rm router-orchestrator.tar.gz
+wget -qO- https://github.com/router-protocol/router-orchestrator-binary-release/raw/main/linux/router-orchestrator.tar.gz | tar -C $HOME/go/bin -xz
 ```
 
 ## 3. Add `config.json` for Orchestrator
