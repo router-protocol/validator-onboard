@@ -71,7 +71,7 @@ After=network-online.target
 [Service]
 User=$USER
 Type=simple
-ExecStart=$(which router-orchestrator) start --config $HOME/.router-orchestrator/config.json
+ExecStart=$(which router-orchestrator) start --config $HOME/.router-orchestrator/config.json --reset
 Restart=always
 RestartSec=3
 LimitNOFILE=65535
