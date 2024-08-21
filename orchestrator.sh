@@ -79,6 +79,7 @@ uninstall_orchestrator() {
     echo "Deleting Orchestrator files..."
     rm -rf $HOME/.router-orchestrator
     rm -f $HOME/go/bin/router-orchestrator
+    rm -rf orchestrator.sh
 
     echo "Uninstallation complete."
 }
